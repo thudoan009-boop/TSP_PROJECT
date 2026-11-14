@@ -417,6 +417,26 @@ python run_algorithms.py --alg greedy dp       # Greedy + DP (bỏ Backtracking)
 
 ---
 
+### Bước 5: Khởi chạy Ứng dụng Web Tương tác (Streamlit Web App - `app.py`)
+
+Hệ thống cung cấp giao diện Web trực quan theo đúng tài liệu đặc tả SRS:
+- **Nguồn địa điểm**: Chọn Preset Demo (5, 8, 12 điểm) hoặc Nhập địa chỉ thủ công kèm Geocoding tự động.
+- **Giới hạn thời gian ca**: Nhập số phút bằng **ô nhập số (không dùng slider)**; để trống = không giới hạn thời gian.
+- **Bản đồ Folium tương tác**: Hiển thị số thứ tự ghé thăm **vàng hổ phách (#ffc107)**, biển báo rẽ, và điểm bỏ qua **(✕)**.
+- **Dashboard số liệu**: Thẻ Key Metrics, Terminal Console ghi log trực tiếp, Bảng phân tích độ phức tạp và Biểu đồ Runtime Benchmark Plotly.
+
+#### Hướng dẫn chạy Web:
+```powershell
+# Di chuyển vào thư mục code chính:
+cd tsp_osrm_demo
+
+# Khởi chạy ứng dụng Streamlit:
+streamlit run app.py
+```
+Trình duyệt sẽ tự động mở trang web tại địa chỉ: `http://localhost:8501`.
+
+---
+
 ## 📂 7. Cấu trúc Thư mục Dự án
 
 ```text
@@ -430,15 +450,16 @@ tsp_osrm_demo/
 ├── hcm_2026.osrm*                  # Bộ tệp chỉ mục đồ thị mạng lưới MLD sau khi tiền xử lý
 │
 └── tsp_osrm_demo/                  # Thư mục mã nguồn chính của ứng dụng
+    ├── app.py                      # Giao diện Web tương tác Streamlit (theo đặc tả SRS v1.1)
     ├── places.csv                  # Danh sách điểm giao hàng đầu vào & giới hạn thời gian cứng
     ├── coords_cache.json           # Bộ đệm lưu trữ tọa độ đã geocode (tránh gọi lại API)
-    ├── main.py                     # Điều phối toàn trình (Online OSRM + GIS Folium Map)
+    ├── main.py                     # Điều phối toàn trình CLI (Online OSRM + GIS Folium Map)
     ├── thuat_toan.py               # Hiện thực 3 thuật toán Selective TSP: Backtracking, Greedy, DP Held-Karp
     ├── api_calls.py                # Wrapper gọi OSRM Table API, Route API & Geocoding ArcGIS
     ├── output.py                   # Xuất ma trận CSV, vẽ bản đồ Folium với thứ tự lộ trình & điểm bỏ qua
     ├── run_algorithms.py           # Module chạy phân tích thực nghiệm & benchmark offline
-    ├── Dockerfile                  # Dockerfile đóng gói ứng dụng Python
-    ├── requirements.txt            # Danh mục thư viện Python (requests, folium, branca)
+    ├── Dockerfile                  # Dockerfile đóng gói ứng dụng Python & Web App
+    ├── requirements.txt            # Danh mục thư viện Python (streamlit, folium, plotly, requests, pandas)
     ├── README.md                   # Tài liệu phân tích và hướng dẫn kỹ thuật chi tiết
     └── output/
         ├── distance_matrix.csv     # Ma trận khoảng cách thực tế giữa các điểm (km)

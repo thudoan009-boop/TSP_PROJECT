@@ -165,8 +165,8 @@ def create_map(
     places: List[Dict],
     results: Dict[str, Dict],
     geometries: Dict[str, Dict],
-    output_path: Path,
-) -> None:
+    output_path: Path | None = None,
+) -> folium.Map:
     """Tạo bản đồ Folium có LayerControl để bật/tắt các chiến lược.
     Mỗi chiến lược sẽ hiện:
     - Polyline màu riêng kèm mũi tên chỉ hướng ➤ theo từng chặng
@@ -408,7 +408,9 @@ def create_map(
         fg.add_to(m)
 
     folium.LayerControl(collapsed=False).add_to(m)
-    m.save(str(output_path))
-    print(f"Đã lưu bản đồ: {output_path}")
+    if output_path is not None:
+        m.save(str(output_path))
+        print(f"Đã lưu bản đồ: {output_path}")
+    return m
 
 """End of output.py"""
