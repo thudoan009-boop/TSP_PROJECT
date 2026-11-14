@@ -1,0 +1,26 @@
+
+# OSRM routing data
+*.osrm
+*.osrm.*
+*.osm.pbf
+motorcycle.lua
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# Generated outputs
+tsp_osrm_demo/output/*
+!tsp_osrm_demo/output/.gitkeep
+
+# IDE and temporary files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Archives
+*.zip
