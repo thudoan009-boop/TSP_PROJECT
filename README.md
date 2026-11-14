@@ -1,54 +1,67 @@
-# TSP Routing & Optimization — OSRM & Phân Tích Thực Nghiệm Thuật Toán
+# Tối Ưu Hóa Lộ Trình Giao Hàng Bằng OSRM & Thuật Toán Tối Ưu (Selective TSP)
 
 Dự án nghiên cứu, hiện thực hóa và phân tích giải pháp tối ưu cho **Bài toán Người giao hàng chọn lọc theo ràng buộc thời gian (Time-Constrained Selective TSP / Orienteering Problem)** trên mạng lưới giao thông đường bộ thực tế tại **Thành phố Hồ Chí Minh**.
 
-Hệ thống tích hợp giữa **Open Source Routing Machine (OSRM)**, dữ liệu bản đồ số **OpenStreetMap (OSM)**, các công cụ xử lý không gian địa lý, và 3 thuật toán tối ưu kinh điển: **Vét cạn (Backtracking)**, **Tham lam (Greedy)**, và **Quy hoạch động (Dynamic Programming - Held-Karp)**.
+Hệ thống tích hợp giữa **Open Source Routing Machine (OSRM)**, dữ liệu bản đồ số **OpenStreetMap (OSM)**, các công cụ không gian địa lý, và 3 thuật toán tối ưu kinh điển: **Vét cạn (Backtracking)**, **Tham lam (Greedy)**, và **Quy hoạch động (Dynamic Programming - Held-Karp)**. Dự án hỗ trợ cả giao diện **Dòng lệnh CLI (`main.py`)** tích hợp sẵn bảng Benchmark đo thời gian thực nghiệm ($ms$) lẫn **Ứng dụng Web tương tác hiện đại (`app.py` - Streamlit)**.
 
 ---
 
 ## 📑 Mục lục
-1. [Tổng quan Dự án & Cơ chế Tối ưu mới](#-1-tổng-quan-dự-án--cơ-chế-tối-ưu-mới)
-2. [Giai đoạn 1: Chuẩn bị Dữ liệu (Data Preparation)](#-2-giai-đoạn-1-chuẩn-bị-dữ-liệu-data-preparation)
-   - 2.1. Dữ liệu bản đồ OpenStreetMap & Cắt lọc vùng TP.HCM bằng `osmium-tool`
+1. [Phần 1: Ý Tưởng & Mô Hình Bài Toán (Problem Concept & Formulation)](#-phần-1-ý-tưởng--mô-hình-bài-toán-problem-concept--formulation)
+   - 1.1. Bối cảnh thực tế (Last-Mile Delivery tại TP.HCM)
+   - 1.2. Mô hình tối ưu 2 mục tiêu bậc thang (Lexicographical Objectives)
+   - 1.3. Tính tương thích ngược với bài toán TSP truyền thống
+2. [Phần 2: Chuẩn Bị Dữ Liệu & Công Nghệ (Data Preparation & Tech Stack)](#-phần-2-chuẩn-bị-dữ-liệu--công-nghệ-data-preparation--tech-stack)
+   - 2.1. Bản đồ OpenStreetMap & Cắt lọc vùng TP.HCM bằng `osmium-tool`
    - 2.2. Xây dựng Profile phương tiện xe máy (`motorcycle.lua`)
    - 2.3. Tiền xử lý đồ thị định tuyến OSRM (MLD Pipeline)
-   - 2.4. Dữ liệu danh sách điểm giao hàng (`places.csv`) & Ràng buộc thời gian cứng
-3. [Giai đoạn 2: Công cụ & Công nghệ Sử dụng (Tools & Tech Stack)](#-3-giai-đoạn-2-công-cụ--công-nghệ-sử-dụng-tools--tech-stack)
-4. [Giai đoạn 3: Quy trình Hoạt động của Dự án (System Workflow)](#-4-giai-đoạn-3-quy-trình-hoạt-động-của-dự-án-system-workflow)
-   - 4.1. Sơ đồ kiến trúc tổng thể
-   - 4.2. Luồng 1: Quy trình Toàn trình Online / Local OSRM (`main.py`)
-   - 4.3. Luồng 2: Phân tích Thuật toán & Kiểm thử Thực nghiệm Offline (`run_algorithms.py`)
-5. [So sánh & Đánh giá 3 Thuật toán Tối ưu](#-5-so-sánh--đánh-giá-3-thuật-toán-tối-ưu)
-6. [Hướng dẫn Cài đặt & Vận hành Chi tiết](#-6-hướng-dẫn-cài-đặt--vận-hành-chi-tiết)
-7. [Cấu trúc Thư mục Dự án](#-7-cấu-trúc-thư-mục-dự-án)
+   - 2.4. Dữ liệu điểm giao hàng (`places.csv`), Geocoding & Bộ đệm tọa độ
+   - 2.5. Bảng công cụ & công nghệ sử dụng (Tech Stack)
+3. [Phần 3: Quy Trình Vận Hành & Thực Hành (Workflow & Practical Execution)](#-phần-3-quy-trình-vận-hành--thực-hành-workflow--practical-execution)
+   - 3.1. Sơ đồ kiến trúc tổng thể toàn hệ thống
+   - 3.2. Luồng 1: Báo cáo toàn trình dòng lệnh CLI (`main.py`)
+   - 3.3. Luồng 2: Ứng dụng Web tương tác Streamlit (`app.py` - Chuẩn SRS v1.1)
+   - 3.4. So sánh & Đánh giá chuyên sâu 3 thuật toán tối ưu
+4. [Phần 4: Hướng Dẫn Cài Đặt & Vận Hành Chi Tiết](#-phần-4-hướng-dẫn-cài-đặt--vận-hành-chi-tiết)
+   - 4.1. Chuẩn bị môi trường Python
+   - 4.2. Chạy ứng dụng Web tương tác (`app.py`)
+   - 4.3. Chạy báo cáo dòng lệnh CLI (`main.py`)
+   - 4.4. Tùy chọn máy chủ OSRM (Trực tuyến vs. Docker Local)
+5. [Phần 5: Cấu Trúc Thư Mục Dự Án](#-phần-5-cấu-trúc-thư-mục-dự-án)
 
 ---
 
-## 🎯 1. Tổng quan Dự án & Cơ chế Tối ưu mới
+## 🎯 Phần 1: Ý Tưởng & Mô Hình Bài Toán (Problem Concept & Formulation)
 
-Trong thực tế vận hành logistics (Last-mile delivery), shipper luôn có một **quỹ thời gian ca làm việc cố định** (ví dụ tối đa $X = 7$ phút hoặc $X = 120$ phút). Nếu danh sách giao hàng có $N - 1$ điểm mà việc đi hết tất cả các điểm chắc chắn sẽ bị trễ giờ làm, giải pháp thực tế nhất là: **Giao được nhiều điểm nhất có thể ($k \le N - 1$) và kịp quay về kho trước khi hết thời gian $X$.**
+### 1.1. Bối cảnh thực tế (Last-Mile Delivery tại TP.HCM)
+Trong thực tế vận hành logistics đô thị bằng xe máy, mỗi shipper thường có một **quỹ thời gian ca làm việc cố định** (ví dụ tối đa $X = 7$ phút hoặc $X = 120$ phút). Nếu danh sách giao hàng có $N - 1$ địa điểm mà việc ghé thăm toàn bộ các điểm chắc chắn sẽ bị trễ giờ ca làm việc, giải pháp thực tế nhất là: **Giao được nhiều đơn nhất có thể ($k \le N - 1$) và bảo đảm quay về kho trước khi hết thời gian $X$.**
 
-### 🌟 Cơ chế tối ưu 2 mục tiêu bậc thang (Lexicographical Objectives):
-1. **Mục tiêu ưu tiên 1 (Tối đa hóa số đơn phục vụ)**: Tìm tập con gồm $k$ điểm giao hàng sao cho $k$ là **lớn nhất có thể** ($k \le N - 1$).
-2. **Mục tiêu ưu tiên 2 (Tối thiểu hóa chi phí)**: Trong tất cả các lộ trình cùng đạt số điểm $k$ tối đa đó, chọn lộ trình có **tổng quãng đường ngắn nhất** (km) và **tổng thời gian nhanh nhất** (phút).
-3. **Ràng buộc cứng (Hard Constraint)**:
+### 1.2. Mô hình tối ưu 2 mục tiêu bậc thang (Lexicographical Objectives)
+Hệ thống giải quyết bài toán theo thứ tự ưu tiên kép:
+1. **Mục tiêu ưu tiên 1 (Tối đa hóa số đơn phục vụ):**
+   Tìm tập con gồm $k$ điểm giao hàng sao cho $k$ là **lớn nhất có thể** ($k \le N - 1$).
+2. **Mục tiêu ưu tiên 2 (Tối thiểu hóa chi phí di chuyển):**
+   Trong tất cả các lộ trình cùng đạt số điểm $k$ tối đa đó, chọn lộ trình có **tổng quãng đường ngắn nhất** (km) và **tổng thời gian nhanh nhất** (phút).
+3. **Ràng buộc thời gian cứng (Hard Constraint):**
    $$\text{Thời gian từ DEPOT} \to \text{Ghé qua } k \text{ điểm} \to \text{Quay về DEPOT} \le X \text{ (phút)}$$
-4. **Xử lý điểm tồn đọng**: Các điểm không kịp ghé thăm sẽ tự động được nhận diện là **bị bỏ lại (hoãn sang ca sau)**, hiển thị danh sách rõ ràng trên Terminal và gắn huy hiệu màu xám `✕` trên Bản đồ tương tác.
-5. **Tính tương thích ngược**: Nếu thời gian $X$ đủ lớn để đi hết toàn bộ $N$ điểm (hoặc không đặt $X$), hệ thống sẽ tự động tìm chu trình khép kín qua đủ 100% các điểm như TSP truyền thống.
+4. **Xử lý đơn tồn đọng:** Các điểm không kịp ghé thăm sẽ tự động được nhận diện là **bị hoãn lại (bỏ qua ca sau)**, hiển thị danh sách rõ ràng trên bảng điều khiển và gắn huy hiệu màu xám `✕` trên bản đồ số.
+
+### 1.3. Tính tương thích ngược với bài toán TSP truyền thống
+Nếu thời gian $X$ đủ lớn để đi hết toàn bộ $N$ điểm (hoặc người dùng **để trống ô thời gian** $\implies X = \infty$), hệ thống tự động tìm chu trình khép kín tối ưu đi qua đủ **100% các điểm** như bài toán TSP chuẩn tắc.
 
 ---
 
-## 🗺️ 2. Giai đoạn 1: Chuẩn bị Dữ liệu (Data Preparation)
+## 🗺️ Phần 2: Chuẩn Bị Dữ Liệu & Công Nghệ (Data Preparation & Tech Stack)
 
 Quy trình chuẩn bị dữ liệu là nền tảng cốt lõi giúp hệ thống định tuyến chính xác với tốc độ cao mà không làm quá tải phần cứng:
 
-```
+```text
 [Geofabrik OSM Vietnam] (~332 MB .pbf)
             │
             ▼ (Dockerfile.osmium - Bounding Box TP.HCM)
    [hcm_2026.osm.pbf] (~29.7 MB)
             │
-            ├─► [motorcycle.lua] (Luật giao thông xe máy VN)
+            ├─► [motorcycle.lua] (Luật giao thông xe máy TP.HCM)
             │
             ▼ (osrm-extract)
    [hcm_2026.osrm]
@@ -57,298 +70,253 @@ Quy trình chuẩn bị dữ liệu là nền tảng cốt lõi giúp hệ thố
 [Mạng lưới OSRM MLD sẵn sàng phục vụ API]
 ```
 
-### 2.1. Dữ liệu bản đồ OpenStreetMap & Cắt lọc vùng TP.HCM bằng `osmium-tool`
-- **Nguồn dữ liệu gốc**: Tải file trích xuất bản đồ Việt Nam định dạng Protocolbuffer Binary Format (`.osm.pbf`) từ Geofabrik (`vietnam-261105.osm.pbf`, dung lượng ~332 MB).
-- **Vấn đề**: File toàn quốc quá lớn, chứa hàng triệu nút (nodes) và đường đi (ways) trên cả nước. Nếu nạp toàn bộ vào OSRM sẽ tốn nhiều gigabyte RAM và thời gian tiền xử lý rất lâu.
-- **Giải pháp**: Trích xuất riêng vùng địa lý TP.HCM bằng `osmium-tool` với khung tọa độ (Bounding Box):
+### 2.1. Bản đồ OpenStreetMap & Cắt lọc vùng TP.HCM bằng `osmium-tool`
+- **Nguồn dữ liệu gốc:** Tải file bản đồ Việt Nam Protocolbuffer Binary Format (`.osm.pbf`) từ Geofabrik (`vietnam-261105.osm.pbf`, dung lượng ~332 MB).
+- **Vấn đề:** File toàn quốc quá lớn, chứa hàng triệu nút và đoạn đường cả nước. Nếu nạp toàn bộ vào OSRM sẽ tốn nhiều gigabyte RAM và tiền xử lý rất lâu.
+- **Giải pháp:** Cắt lọc riêng vùng TP.HCM bằng `osmium-tool` với khung tọa độ (Bounding Box):
   - Kinh độ (Longitude): `106.35` đến `107.03`
   - Vĩ độ (Latitude): `10.37` đến `11.16`
-- **Thực hiện qua Dockerfile.osmium**:
-  ```dockerfile
-  FROM ubuntu:24.04
-  RUN apt-get update && apt-get install -y osmium-tool && rm -rf /var/lib/apt/lists/*
-  ```
-  Lệnh trích xuất:
+- Lệnh trích xuất qua `Dockerfile.osmium`:
   ```bash
   osmium extract --bbox 106.35,10.37,107.03,11.16 vietnam-261105.osm.pbf -o hcm_2026.osm.pbf
   ```
-  *Kết quả*: Dung lượng giảm xuống còn **~29.7 MB**, tăng tốc độ truy vấn lên gấp 10 lần và tiết kiệm RAM tối đa.
+  *Kết quả:* File giảm từ ~332 MB xuống còn **~29.7 MB**, tăng tốc truy vấn gấp 10 lần và tối ưu bộ nhớ.
 
 ### 2.2. Xây dựng Profile phương tiện xe máy (`motorcycle.lua`)
-Server OSRM công cộng quốc tế (`https://router.project-osrm.org`) chỉ hỗ trợ ô tô (`driving`), xe đạp (`bike`) và đi bộ (`foot`), hoàn toàn **không hỗ trợ xe máy** tại Việt Nam.
-
-Tệp `motorcycle.lua` được tùy biến riêng cho điều kiện giao thông TP.HCM:
-- **Quyền lưu thông**: Bổ sung `access = { motorcycle = true }`. Cho phép đi vào các tuyến đường cấm ô tô nhưng xe máy được phép lưu thông (hẻm nhỏ, đường gom, tuyến phố nội đô).
-- **Quy tắc 1 chiều**: Tuân thủ chiều lưu thông của xe máy trên đường 1 chiều (`oneway = yes`).
-- **Tốc độ thiết kế thực tế**:
-  - Đường đô thị (primary/secondary): 30 – 40 km/h.
-  - Đường ngõ hẻm (residential/living_street): 20 – 25 km/h.
-  - Quốc lộ/Đại lộ (trunk): 50 – 60 km/h.
-- **Phạt chuyển hướng (Turn Penalties)**: Thiết lập thời gian phạt khi rẽ trái, rẽ phải hoặc quay đầu (U-turn) để phản ánh đúng độ trễ tại các nút giao thông.
+Máy chủ OSRM công cộng quốc tế chỉ hỗ trợ ô tô (`driving`), xe đạp (`bike`) và đi bộ (`foot`). File cấu hình `motorcycle.lua` được thiết kế riêng cho xe máy tại TP.HCM:
+- **Quyền lưu thông:** Bổ sung `access = { motorcycle = true }`. Cho phép đi vào các tuyến đường cấm ô tô nhưng xe máy được phép đi (hẻm nhỏ, đường nhánh, phố đi bộ cho phép).
+- **Quy tắc 1 chiều:** Tuân thủ hướng đường một chiều của xe máy (`oneway = yes`).
+- **Tốc độ thực tế đô thị:**
+  - Tuyến phố chính (primary/secondary): 30 – 40 km/h.
+  - Ngõ hẻm nội đô (residential/living_street): 20 – 25 km/h.
+  - Đại lộ/Quốc lộ (trunk): 50 – 60 km/h.
+- **Phạt chuyển hướng (Turn Penalties):** Thêm chi phí thời gian khi rẽ trái, rẽ phải hoặc quay đầu (U-turn) để mô phỏng chính xác độ trễ tại nút giao.
 
 ### 2.3. Tiền xử lý đồ thị định tuyến OSRM (MLD Pipeline)
-Sử dụng thuật toán **Multi-Level Dijkstra (MLD)** để chuẩn bị dữ liệu đường đi qua 3 bước:
-1. **Extract**:
-   ```bash
-   docker run -t -v "${PWD}:/data" ghcr.io/project-osrm/osrm-backend osrm-extract -p /data/motorcycle.lua /data/hcm_2026.osm.pbf
-   ```
-2. **Partition** (Phân chia đồ thị mạng lưới thành các ô tế bào đa cấp):
-   ```bash
-   docker run -t -v "${PWD}:/data" ghcr.io/project-osrm/osrm-backend osrm-partition /data/hcm_2026.osrm
-   ```
-3. **Customize** (Tính toán trọng số chi phí khoảng cách và thời gian cho từng đoạn đường):
-   ```bash
-   docker run -t -v "${PWD}:/data" ghcr.io/project-osrm/osrm-backend osrm-customize /data/hcm_2026.osrm
-   ```
+Sử dụng thuật toán **Multi-Level Dijkstra (MLD)** qua 3 bước:
+1. **Extract:** Trích xuất đồ thị mạng lưới đường giao thông theo luật xe máy.
+2. **Partition:** Phân chia đồ thị thành các ô tế bào đa cấp phục vụ tìm kiếm nhanh.
+3. **Customize:** Tính toán ma trận trọng số chi phí khoảng cách và thời gian cho từng cung đường.
 
-### 2.4. Dữ liệu danh sách điểm giao hàng (`places.csv`) & Ràng buộc thời gian cứng
-Dữ liệu đầu vào do người dùng chỉ định gồm các điểm cần giao hàng:
-```csv
-id,name,address,max_minutes
-DEPOT,Bưu điện Trung tâm TP.HCM,"02 Công xã Paris, Quận 1, TP.HCM",7
-P1,Nhà thờ Đức Bà,"01 Công xã Paris, Quận 1, TP.HCM",
-P2,Chợ Bến Thành,"Đường Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM",
-P3,Nhà hát Thành phố,"07 Công trường Lam Sơn, Quận 1, TP.HCM",
-P4,Công viên Tao Đàn,"Đường Trương Định, Phường Bến Thành, Quận 1, TP.HCM",
-```
-- **Dòng `DEPOT`**: Vị trí xuất phát và cũng là điểm kết thúc của chuyến hành trình.
-- **Cột `max_minutes`**: Thời gian trần tối đa cho phép của ca giao hàng (tính bằng phút). Thuật toán sẽ dùng mốc này làm ràng buộc cứng để tìm phương án giao được nhiều điểm $k$ nhất mà không vượt quá số phút này.
-- **Cơ chế Geocoding tự động**: Người dùng chỉ cần nhập địa chỉ tiếng Việt rõ ràng. Khi chạy, hệ thống sẽ:
-  1. Kiểm tra cache trong `coords_cache.json` hoặc danh bạ tọa độ chuẩn `DEFAULT_COORDS`.
-  2. Nếu chưa có, tự động gọi **ArcGIS World Geocoding API** để lấy tọa độ chính xác $(lat, lon)$ và tự lưu vào file cache để tái sử dụng vĩnh viễn không cần gọi lại mạng.
+### 2.4. Dữ liệu điểm giao hàng (`places.csv`), Geocoding & Bộ đệm tọa độ
+- File CSV đầu vào định nghĩa vị trí Kho (DEPOT) và các điểm giao hàng:
+  ```csv
+  id,name,address,max_minutes
+  DEPOT,Bưu điện Trung tâm TP.HCM,"02 Công xã Paris, Quận 1, TP.HCM",7
+  P1,Nhà thờ Đức Bà,"01 Công xã Paris, Quận 1, TP.HCM",
+  P2,Chợ Bến Thành,"Đường Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM",
+  P3,Nhà hát Thành phố,"07 Công trường Lam Sơn, Quận 1, TP.HCM",
+  P4,Công viên Tao Đàn,"Đường Trương Định, Phường Bến Thành, Quận 1, TP.HCM",
+  ```
+- **Cơ chế Geocoding tự động:** Người dùng chỉ cần nhập địa chỉ tiếng Việt thông thường. Hệ thống sẽ:
+  1. Tra cứu nhanh danh bạ chuẩn `DEFAULT_COORDS` hoặc bộ nhớ đệm `coords_cache.json`.
+  2. Nếu là địa chỉ mới, tự động gửi yêu cầu tới **ArcGIS World Geocoding API** để lấy tọa độ $(lat, lon)$ chính xác và lưu vào cache vĩnh viễn, không cần gửi yêu cầu mạng lại lần sau.
 
----
+### 2.5. Bảng công cụ & công nghệ sử dụng (Tech Stack)
 
-## 🛠️ 3. Giai đoạn 2: Công cụ & Công nghệ Sử dụng (Tools & Tech Stack)
-
-| Công cụ / Thư viện | Vai trò trong hệ thống |
-| :--- | :--- |
-| **Docker & Docker Compose** | Đóng gói môi trường định tuyến OSRM (`ghcr.io/project-osrm/osrm-backend`) và Python app độc lập, bảo đảm chạy đồng nhất trên Windows/Linux/macOS mà không phụ thuộc cài đặt máy chủ. |
-| **Osmium Tool** | Bộ công cụ C++ xử lý dữ liệu bản đồ OSM mã nguồn mở, dùng cắt Bounding Box trích xuất TP.HCM từ dữ liệu toàn quốc. |
-| **OSRM Engine (MLD)** | Máy chủ định tuyến tính toán đường đi với hiệu năng cực cao, cung cấp **Table API** (ma trận chi phí) và **Route API** (hình học polyline thực tế). |
-| **Python 3.11+** | Ngôn ngữ trung tâm phát triển logic thuật toán, xử lý dữ liệu, kiểm thử và vẽ bản đồ. |
-| **Requests** | Giao tiếp HTTP RESTful với OSRM Server và Geocoding API. |
-| **Folium & Branca** | Tạo bản đồ tương tác HTML (Leaflet.js), hỗ trợ nền vệ tinh Google Maps, gắn icon, mũi tên di chuyển, biển báo rẽ, số thứ tự điểm dừng và huy hiệu điểm bỏ qua `✕`. |
-| **ArcGIS World Geocoding** | Dịch vụ phân giải địa chỉ thành tọa độ địa lý toàn cầu miễn phí, không yêu cầu API Key. |
-| **Python Standard Libs (`time.perf_counter`, `csv`, `math`, `pathlib`)** | Đo đạc thời gian thực nghiệm độ chính xác micro-giây ($ms$), xử lý ma trận và đọc ghi file. |
+| Công cụ / Thư viện | Phiên bản | Vai trò trong hệ thống |
+| :--- | :--- | :--- |
+| **Python** | 3.11+ | Ngôn ngữ trung tâm phát triển thuật toán, xử lý dữ liệu và đo đạc thực nghiệm. |
+| **Streamlit** | >= 1.35.0 | Nền tảng xây dựng Web App giao diện hai cột, bảng điều khiển và dashboard. |
+| **OSRM Engine** | v5.27+ (MLD) | Máy chủ tính toán ma trận chi phí (Table API) và hình học tuyến đường (Route API). |
+| **Folium & Branca** | >= 0.16.0 | Dựng bản đồ số tương tác trên nền Google Maps, vẽ polyline, gắn biển báo rẽ và marker. |
+| **Plotly** | >= 5.20.0 | Vẽ biểu đồ Runtime Benchmark so sánh thời gian thực thi thuật toán. |
+| **Pandas** | >= 2.0.0 | Xử lý dữ liệu bảng, hiển thị danh sách địa điểm và ma trận chi phí. |
+| **Requests** | >= 2.31.0 | Gọi API HTTP RESTful kết nối OSRM và ArcGIS Geocoding. |
+| **`time.perf_counter`**| Chuẩn Python | Đo đạc thời gian thực thi thuật toán với độ chính xác micro-giây ($ms$). |
+| **Docker & Compose** | Khuyến nghị | Tùy chọn đóng gói máy chủ OSRM cục bộ chạy mạng đường xe máy TP.HCM. |
 
 ---
 
-## 🔄 4. Giai đoạn 3: Quy trình Hoạt động của Dự án (System Workflow)
+## 🔄 Phần 3: Quy Trình Vận Hành & Thực Hành (Workflow & Practical Execution)
 
-Hệ thống được thiết kế theo kiến trúc module hóa phân tầng, hỗ trợ **2 luồng hoạt động riêng biệt**:
+### 3.1. Sơ đồ kiến trúc tổng thể toàn hệ thống
 
-```
-                              [places.csv]
-                                   │
-             ┌─────────────────────┴─────────────────────┐
-             ▼                                           ▼
-   [Luồng 1: main.py]                         [Luồng 2: run_algorithms.py]
- (Online / Local OSRM Server)                  (Offline / Kiểm thử thực nghiệm)
-             │                                           │
-  - Geocoding tọa độ (lat/lon)               - Đọc distance_matrix.csv
-  - Gọi OSRM Table API                         & duration_matrix.csv
-  - Lưu distance & duration CSV                         │
-             │                                          ▼
-             ▼                               - In ma trận Input chuẩn
-  - Giải Selective TSP (<= max_time):         - Benchmark 3 thuật toán:
-    * Backtracking (nhánh cận cắt tỉa)         * Backtracking (Selective)
-    * Greedy (lookahead đường lui)             * Greedy (an toàn quay về)
-    * DP Held-Karp (quét bitmask)              * DP Held-Karp (quét k max)
-  - Đánh giá điểm phục vụ & điểm bỏ qua      - Đo thời gian perf_counter (ms)
-  - Gọi OSRM Route API (GeoJSON)                        │
-             │                                          ▼
-             ▼                               - Bảng phân tích độ phức tạp (N)
-  - Xuất [output/route_map.html]              - Bộ Unit Test kiểm định
-    (Bản đồ Google Maps có thứ tự ghé thăm
-     và huy hiệu đánh dấu điểm bỏ qua ✕)
+```text
+                           [Nguồn Dữ Liệu Địa Điểm]
+                           (places.csv hoặc Web Input)
+                                       │
+                    ┌──────────────────┴──────────────────┐
+                    ▼                                     ▼
+        [Luồng 1: CLI main.py]                [Luồng 2: Web App app.py]
+                    │                                     │
+                    ├─► Geocoding (ArcGIS) & Cache       ├─► Geocoding / Preset Demo
+                    ├─► OSRM Table API (Ma trận N x N)   ├─► Ô nhập thời gian số (No slider)
+                    │                                     │
+                    ▼                                     ▼
+           [thuat_toan.py - Chạy 3 Thuật Toán Tối Ưu Cho Xe Máy]
+           ┌──────────────────────┬──────────────────────┐
+           ▼                      ▼                      ▼
+     Backtracking               Greedy              Held-Karp DP
+   (Nhánh cận cắt tỉa)     (Lookahead an toàn)   (Quét trạng thái Bitmask)
+           │                      │                      │
+           └──────────────────────┼──────────────────────┘
+                                  ▼
+           [Đo thời gian thực nghiệm bằng time.perf_counter() (ms)]
+                                  │
+                    ┌─────────────┴─────────────┐
+                    ▼                           ▼
+        [Báo Cáo CLI Terminal]       [Bảng Điều Khiển Web App]
+        - Chi tiết từng chặng        - 3 Thẻ Key Metrics
+        - Điểm phục vụ & bỏ qua      - Bản đồ Folium Google Maps
+        - Bảng Benchmark Terminal    - Terminal Console ghi log
+        - Xuất file route_map.html   - Biểu đồ Plotly Benchmark
 ```
 
 ---
 
-### 4.1. Luồng 1: Quy trình Toàn trình Online / Local OSRM (`main.py`)
-Áp dụng khi người dùng thay đổi danh sách địa điểm trong `places.csv` hoặc cần cập nhật lại đường đi từ OSRM:
-
-1. **Bước 1 - Khởi tạo & Tải dữ liệu**:
-   - `main.py` đọc file `places.csv`.
-   - Hàm `load_places` trong `api_calls.py` kiểm tra từng địa chỉ. Nếu thiếu `latitude` / `longitude`, hệ thống thực hiện Geocoding và lưu vào `coords_cache.json`.
-2. **Bước 2 - Lấy Ma trận Khoảng cách & Thời gian**:
-   - Gọi `fetch_matrices`: Gửi tọa độ toàn bộ $N$ điểm đến endpoint `/table/v1/driving/...` (hoặc `/motorcycle/...`) của OSRM.
-   - Nhận về 2 ma trận $N \times N$: Khoảng cách ($m$) và Thời gian ($s$).
-   - `save_matrices` quy đổi thành km và phút (làm tròn 2 chữ số thập phân), ghi thành 2 file `output/distance_matrix.csv` và `output/duration_matrix.csv`.
-3. **Bước 3 - Giải quyết bài toán Selective TSP với 3 chiến lược**:
-   - Chuyển đổi `max_minutes` từ DEPOT sang giây (`max_time_s = max_minutes * 60`).
-   - `solve_backtracking(distances, n, dur=durations, max_time=max_time_s)`: Duyệt nhánh cận tìm tập con $k$ lớn nhất có thời gian $\le \text{max\_time}$.
-   - `solve_greedy(distances, n, dur=durations, max_time=max_time_s)`: Tham lam với điều kiện an toàn luôn đủ thời gian quay về Depot.
-   - `solve_dynamic_programming(distances, n, dur=durations, max_time=max_time_s)`: Quét không gian trạng thái $(mask, u)$ tìm phương án $k$ lớn nhất và chi phí thấp nhất.
-4. **Bước 4 - Đánh giá Điểm Phục Vụ & Điểm Bỏ Qua (Evaluation)**:
-   - Hàm `evaluate_route` tính toán danh sách các điểm được giao thành công ($k$ điểm), danh sách các điểm bị loại bỏ (không đủ thời gian), và thời gian ca làm việc còn dư.
-5. **Bước 5 - Lấy Hình học Đường đi Thực tế (Route Geometry)**:
-   - Với mỗi lộ trình tìm được, hàm `get_route_geometry` gọi endpoint `/route/v1/...` của OSRM để lấy tọa độ chi tiết từng ngã rẽ và đoạn đường cong (Polyline GeoJSON).
-6. **Bước 6 - Xuất Bản đồ Số Tương tác (`output/route_map.html`)**:
-   - Hàm `create_map` trong `output.py` tạo giao diện bản đồ Folium trên nền **Google Maps** (hỗ trợ cả lớp Google Vệ tinh).
-   - Đánh dấu các địa điểm với Tooltip cố định tên địa danh.
-   - Vẽ đường đi với màu sắc nhận diện riêng:
-     - **Vét cạn (Backtracking)**: Màu xanh lá cây (`#28a745`), độ dày nét 6.
-     - **Tham lam (Greedy)**: Màu đỏ rực (`#dc3545`), độ dày nét 5.
-     - **Quy hoạch động (DP)**: Màu cam đậm (`#ff8800`), độ dày nét 5.
-   - **Tích hợp các chi tiết chỉ dẫn**:
-     - Mũi tên chỉ hướng di chuyển `➤` chạy dọc thân đường.
-     - Biển báo các vị trí rẽ: Rẽ trái `↰`, Rẽ phải `↱`, Vòng xuyến `🔄`, Quay đầu `↩`.
-     - **Huy hiệu số thứ tự lộ trình (`1`, `2`, `3`...)**: Đặt ngay cạnh mỗi điểm dừng theo đúng thứ tự ghé thăm của thuật toán.
-     - **Huy hiệu màu xám `✕`**: Đặt trên các điểm bị bỏ qua do giới hạn thời gian để shipper nắm rõ các đơn hoãn lại.
-     - `LayerControl`: Checkbox cho phép bật/tắt từng chiến lược để so sánh trực quan lộ trình.
+### 3.2. Luồng 1: Báo cáo toàn trình dòng lệnh CLI (`main.py`)
+Phục vụ chạy tự động, lập báo cáo kết quả và đo benchmark nhanh trên Terminal:
+1. **Bước 1:** Đọc file `places.csv`, tự động geocode các địa chỉ chưa có tọa độ.
+2. **Bước 2:** Gọi OSRM Table API lấy ma trận khoảng cách (m) và thời gian (s), tự động chuyển đổi sang km và phút lưu vào `output/distance_matrix.csv` và `output/duration_matrix.csv`.
+3. **Bước 3:** Chạy 3 thuật toán:
+   - Đo thời gian chạy thuần của thuật toán bằng `time.perf_counter()`.
+   - Lấy hình học chi tiết từng khúc cua, ngã rẽ từ OSRM Route API.
+4. **Bước 4:** In chi tiết chặng di chuyển, số điểm phục vụ ($k/n$), điểm bị bỏ lại và thời gian thực nghiệm ($ms$).
+5. **Bước 5:** In **BẢNG BENCHMARK ĐỘ PHỨC TẠP THỰC NGHIỆM** ngay trên Terminal:
+   ```text
+   ============================================================================
+                    BẢNG BENCHMARK ĐỘ PHỨC TẠP THỰC NGHIỆM
+   ============================================================================
+   Thuật toán                     | Độ phức tạp lý thuyết  | Thời gian thực nghiệm
+   ----------------------------------------------------------------------------
+     Vét cạn (Backtracking)       | O((N-1)!)              |         0.055 ms
+     Tham lam (Greedy)            | O(N²)                  |         0.043 ms
+     Quy hoạch động (DP)          | O(N²·2ᴺ)               |         0.273 ms
+   ============================================================================
+   ```
+6. **Bước 6:** Tự động tạo và lưu bản đồ tương tác vào `output/route_map.html`.
 
 ---
 
-### 4.2. Luồng 2: Phân tích Thuật toán & Kiểm thử Thực nghiệm Offline (`run_algorithms.py`)
-Được thiết kế phục vụ mục đích học thuật, nghiên cứu và báo cáo. **Hoàn toàn không cần kết nối internet hay máy chủ OSRM**:
+### 3.3. Luồng 2: Ứng dụng Web tương tác Streamlit (`app.py` - Chuẩn SRS v1.1)
+Giao diện trực quan hóa toàn bộ quá trình dành cho người dùng và trình diễn đồ án:
 
-1. **Bước 1 - Đọc ma trận có sẵn**:
-   - Đọc trực tiếp ma trận 2 chiều từ file `output/distance_matrix.csv` và `output/duration_matrix.csv`.
-2. **Bước 2 - In định dạng ma trận Input chuẩn**:
-   - In kích thước $N$ và toàn bộ bảng ma trận khoảng cách đối xứng.
-3. **Bước 3 - Thực thi và Đo lường Thực nghiệm**:
-   - Sử dụng `time.perf_counter()` đo lường thời gian chạy trung bình qua nhiều lượt lặp.
-   - In kết quả chi tiết từng thuật toán:
-     - Chi phí tối thiểu (km).
-     - Chuỗi chỉ số lộ trình: `0 1 2 3 0`.
-     - Lộ trình tên địa danh trực quan.
-     - **Số lượng điểm phục vụ**: ví dụ `3/4 điểm (Ràng buộc ca: ≤ 7.0 phút)`.
-     - **Danh sách điểm bỏ qua**: ví dụ `⚠️ Điểm bỏ qua (không đủ giờ): Công viên Tao Đàn`.
-     - Thời gian thực thi chính xác đến phần nghìn mili-giây ($ms$).
-4. **Bước 4 - Bảng Phân tích Độ Phức Tạp Thực Nghiệm**:
-   - Tự động lấy kích thước $N$ hiện tại từ ma trận CSV và đo đạc thời gian của 3 thuật toán, đối chiếu trực tiếp với độ phức tạp lý thuyết:
-     ```text
-     ================================================================================
-                  BẢNG PHÂN TÍCH ĐỘ PHỨC TẠP THỰC NGHIỆM
-     ================================================================================
-       N   |   Backtracking (ms)    |    Greedy (ms)     |   DP Held-Karp (ms)   
-           |  Lý thuyết: O((N-1)!)  |  Lý thuyết: O(N²)  |  Lý thuyết: O(N²·2ⁿ)  
-     --------------------------------------------------------------------------------
-       5   |        0.029 ms        |     0.0371 ms      |        0.078 ms       
-     --------------------------------------------------------------------------------
-     ================================================================================
-     ```
-5. **Bước 5 - Bộ Unit Test Kiểm định (chạy với cờ `--test`)**:
-   - Kiểm tra **Tính hợp lệ của chu trình**: Bắt đầu và kết thúc tại 0, không lặp lại đỉnh.
-   - Kiểm tra **Tính tối ưu**: Đảm bảo số điểm $k$ phục vụ và chi phí của Dynamic Programming luôn trùng khớp tuyệt đối với kết quả Backtracking.
-   - Kiểm tra **Ràng buộc thời gian**: Kiểm tra tổng thời gian của cả 3 thuật toán đều $\le \text{max\_time}$.
+#### Cột trái — Điều khiển & Thiết lập:
+- **Nguồn địa điểm (FR-01):**
+  - **Preset Demo (FR-01B):** Cung cấp sẵn 3 bộ dữ liệu tọa độ chuẩn:
+    - *Nhỏ (5 điểm):* Depot Bưu điện TP, Nhà thờ Đức Bà, Chợ Bến Thành, Nhà hát TP, CV Tao Đàn.
+    - *Vừa (8 điểm):* Thêm Dinh Độc Lập, Hồ Con Rùa, Bảo tàng Chứng tích, Chợ Tân Định.
+    - *Lớn (12 điểm):* Thêm Landmark 81, Bến Nhà Rồng, Thảo Cầm Viên (có cơ chế cảnh báo an toàn cho Backtracking khi $N \ge 11$).
+  - **Nhập địa chỉ thủ công (FR-01A):** Nhập Depot và danh sách điểm cần ghé, thêm/xóa điểm động, tích hợp nút kiểm tra Geocoding.
+- **Giới hạn thời gian ca làm việc (FR-02 — TUYỆT ĐỐI KHÔNG DÙNG SLIDER):**
+  - Ô nhập số: **“Giới hạn thời gian (phút) — không bắt buộc”**.
+  - Để trống $\implies$ Không giới hạn thời gian (tìm chu trình đủ 100% điểm).
+  - Nhập số dương $\implies$ Áp dụng ràng buộc ca.
+  - Nhập $\le 0$ hoặc chữ $\implies$ Báo lỗi đỏ rõ ràng.
+- **Phương tiện:** Cố định và tối ưu hóa riêng cho **🛵 Xe máy (Motorcycle)**.
+
+#### Cột phải — Bảng điều khiển kết quả:
+- **Key Metrics (FR-05):** 3 thẻ chỉ số tương ứng 3 thuật toán gồm Quãng đường (km), Thời gian đi (phút), Số điểm phục vụ ($k/n$), Thời gian CPU ($ms$), và huy hiệu trạng thái (Đạt chuẩn / Bỏ qua đơn / Lố giờ).
+- **Bản đồ Folium Google Maps (FR-04):**
+  - Lớp bản đồ đường bộ & Google Vệ tinh.
+  - **Huy hiệu số thứ tự dừng vàng hổ phách (`1`, `2`, `3`...)** nổi bật trên nền đường.
+  - **Huy hiệu màu xám `✕`** đánh dấu các đơn hàng bị hoãn lại do hết giờ ca.
+  - Polyline bám đường thực tế OSRM có mũi tên chỉ hướng `➤` và biển báo chuyển hướng (`↰`, `↱`, `🔄`, `↩`).
+  - Bộ lọc xem *Tất cả các tuyến* hoặc *Từng tuyến riêng biệt* tránh chồng chéo marker.
+- **Terminal Output Console (FR-06):** Khung nền đen bóng hiển thị log thực thi từng bước có phân loại màu sắc (`[INFO]`, `[OK]`, `[RESULT]`, `[WARN]`, `[DONE]`), kèm nút **📥 Tải Log (.txt)**.
+- **Biểu đồ Runtime Benchmark Plotly (FR-08):** Biểu đồ cột trực quan so sánh thời gian chạy thực nghiệm ($ms$) đo bằng `perf_counter()`.
+- **Bảng Độ phức tạp thuật toán (FR-07):** Bảng đối chiếu lý thuyết Big-O và khuyến nghị áp dụng.
 
 ---
 
-## 🧠 5. So sánh & Đánh giá 3 Thuật toán Tối ưu
+### 3.4. So sánh & Đánh giá chuyên sâu 3 thuật toán tối ưu
 
-| Tiêu chí | 1. Vét cạn (Backtracking) | 2. Tham lam (Greedy) | 3. Quy hoạch động (Held-Karp) |
+| Tiêu chí | 1. Vét cạn (Backtracking) | 2. Tham lam (Greedy) | 3. Quy hoạch động (Held-Karp DP) |
 | :--- | :--- | :--- | :--- |
-| **Nguyên lý** | Duyệt nhánh cận đệ quy. Nếu thời gian hiện tại cộng đường về depot $> X \implies$ Cắt tỉa (Pruning) ngay. Duy trì kỷ lục $(k_{\max}, \text{cost}_{\min})$. | Tại mỗi bước, chọn điểm gần nhất trong số các điểm an toàn (đến được và vẫn kịp quay về depot $\le X$). Dừng ngay khi hết điểm an toàn. | Tính bảng $dp[mask][u]$ lưu thời gian ngắn nhất qua tập đỉnh $mask$. Quét mọi trạng thái $(mask, u)$ thỏa mãn $\le X$, chọn trạng thái có số bit 1 lớn nhất. |
-| **Tính tối ưu** | **Tối ưu toàn cục 100%** (Tìm được số điểm $k$ nhiều nhất và quãng đường ngắn nhất). | **Xấp xỉ (Heuristic)**, có thể dừng sớm hoặc phục vụ ít hơn 1-2 điểm so với tối ưu. | **Tối ưu toàn cục 100%** (Cam kết số điểm $k$ tối đa và chi phí tối thiểu). |
-| **Độ phức tạp Thời gian** | $O((N-1)!)$ (thực tế chạy rất nhanh do tỉa nhánh sớm bởi $X$) | $O(N^2)$ (chạy trong chớp mắt $< 0.05$ ms) | $O(N^2 \cdot 2^N)$ |
-| **Độ phức tạp Không gian** | $O(N)$ (ngăn xếp đệ quy) | $O(N)$ (mảng trạng thái `visited`) | $O(N \cdot 2^N)$ (bảng lưu trạng thái bitmask) |
-| **Ưu điểm** | Đơn giản, tốn cực ít bộ nhớ RAM, bảo đảm luôn tìm ra lời giải tốt nhất. | Chạy siêu nhanh, phù hợp cho bài toán thời gian thực với hàng trăm điểm giao. | Nhanh hơn vét cạn theo cấp số nhân, bảo đảm 100% lời giải tối ưu. |
-| **Nhược điểm** | Khi $N \ge 12$ và $X$ quá lớn, số nhánh duyệt có thể tăng nhanh. | Dễ dừng lại sớm nếu điểm đầu tiên chọn dẫn vào vùng cô lập. | Giới hạn bởi bộ nhớ RAM khi $N > 20$. |
-| **Phạm vi áp dụng** | $N \le 10$ điểm | $N$ lớn từ hàng chục đến hàng nghìn điểm | $N \le 16 - 18$ điểm |
+| **Nguyên lý hoạt động** | Duyệt cây đệ quy có cắt tỉa nhánh cận. Nếu thời gian hiện tại cộng đường về kho $> X \implies$ Cắt tỉa ngay lập tức. Duy trì kỷ lục $(k_{\max}, \text{cost}_{\min})$. | Tại mỗi bước, chọn điểm gần nhất trong các điểm an toàn (đến được và còn đủ giờ quay về kho $\le X$). Dừng ngay khi không còn điểm an toàn. | Bảng $dp[mask][u]$ lưu thời gian nhỏ nhất đi qua tập đỉnh biểu diễn bằng bitmask kết thúc tại $u$. Quét mọi trạng thái hợp lệ $\le X$, chọn trạng thái có số bit 1 lớn nhất. |
+| **Tính tối ưu** | **Tối ưu toàn cục 100%** (Số điểm $k$ tối đa, quãng đường ngắn nhất). | **Xấp xỉ (Heuristic)**, có thể dừng sớm hoặc phục vụ ít hơn 1 đơn so với tối ưu. | **Tối ưu toàn cục 100%** (Cam kết số điểm $k$ tối đa và chi phí tối thiểu). |
+| **Độ phức tạp Thời gian** | $O((N-1)!)$ | $O(N^2)$ (thực thi cực nhanh $< 0.05$ ms) | $O(N^2 \cdot 2^N)$ |
+| **Độ phức tạp Không gian** | $O(N)$ (ngăn xếp đệ quy) | $O(N)$ (mảng đánh dấu đỉnh) | $O(N \cdot 2^N)$ (bảng trạng thái bitmask) |
+| **Ưu điểm** | Đơn giản, tốn rất ít RAM, luôn bảo đảm tìm ra kết quả tốt nhất. | Chạy tức thì, phù hợp bài toán thời gian thực với quy mô hàng trăm điểm. | Nhanh hơn vét cạn theo cấp số nhân, 100% bảo đảm kết quả tối ưu. |
+| **Nhược điểm** | Khi $N \ge 12$ và thời gian $X$ quá lớn, số nhánh duyệt tăng vọt. | Dễ dừng lại sớm nếu điểm chọn ban đầu dẫn vào vùng cô lập. | Giới hạn bởi bộ nhớ RAM khi $N > 20$. |
+| **Phạm vi áp dụng khuyến nghị**| $N \le 10$ điểm | $N$ lớn từ hàng chục đến hàng nghìn điểm | $N \le 16 - 18$ điểm |
 
 ---
 
-## 🚀 6. Hướng dẫn Cài đặt & Vận hành Chi tiết
+## 🚀 Phần 4: Hướng Dẫn Cài Đặt & Vận Hành Chi Tiết
 
-### Bước 1: Chuẩn bị Môi trường Python
-Mở Terminal tại thư mục gốc của dự án:
+### 4.1. Chuẩn bị môi trường Python
+Mở Terminal tại thư mục gốc dự án:
 ```powershell
-# Di chuyển vào thư mục code chính
-cd tsp_osrm_demo
-
-# Kích hoạt môi trường ảo (nếu đã có):
+# Kích hoạt môi trường ảo:
 .\.venv\Scripts\Activate.ps1
 
-# Hoặc cài đặt các thư viện cần thiết:
-pip install -r requirements.txt
+# Cài đặt thư viện phụ thuộc (nếu chưa có):
+pip install -r tsp_osrm_demo\requirements.txt
 ```
 
 ---
 
-### Bước 2: Khởi động Máy chủ OSRM Định tuyến (Docker)
-Để hệ thống tính toán đường đi xe máy chuẩn xác qua OSRM:
+### 4.2. Chạy ứng dụng Web tương tác (`app.py`)
+Cách thuận tiện và trực quan nhất để trải nghiệm và báo cáo:
 
-#### Cách 1: Sử dụng Docker Compose (Đơn giản nhất)
+```powershell
+# Chạy trực tiếp qua python venv:
+.\.venv\Scripts\python.exe -m streamlit run tsp_osrm_demo\app.py
+
+# Hoặc nếu đã kích hoạt venv:
+cd tsp_osrm_demo
+streamlit run app.py
+```
+> Trình duyệt web sẽ tự động mở trang tại: **`http://localhost:8501`**.
+
+---
+
+### 4.3. Chạy báo cáo dòng lệnh CLI (`main.py`)
+Khi muốn chạy tự động và xuất ngay file HTML bản đồ và bảng Benchmark ra terminal:
+
+```powershell
+cd tsp_osrm_demo
+python main.py
+```
+- Kết quả Terminal: In đầy đủ lộ trình, số đơn giao thành công, điểm bị bỏ lại, thời gian thực nghiệm ($ms$) và Bảng Benchmark.
+- Bản đồ: Mở file `output/route_map.html` trên trình duyệt để quan sát các tuyến đường Google Maps.
+
+---
+
+### 4.4. Tùy chọn máy chủ OSRM (Trực tuyến vs. Docker Local)
+
+#### Lựa chọn 1: Máy chủ trực tuyến miễn phí (Mặc định)
+* Hệ thống mặc định trỏ tới `https://router.project-osrm.org`.
+* **Không cần bật Docker**, không cần cài đặt gì thêm, mở web lên là chạy ngay.
+* Hệ thống tự động xử lý profile thông minh để luôn kết nối ổn định.
+
+#### Lựa chọn 2: Máy chủ Docker Local (Nếu muốn chạy offline mạng đường xe máy TP.HCM)
 Tại thư mục gốc chứa file `compose.yaml`:
 ```powershell
 docker compose up -d osrm
 ```
-Server OSRM sẽ khởi chạy và lắng nghe tại cổng `http://localhost:5001`.
-
-#### Cách 2: Khởi chạy thủ công bằng Docker CLI
+Máy chủ OSRM local sẽ lắng nghe tại `http://localhost:5001`. Khi chạy, chỉ cần đặt biến môi trường:
 ```powershell
-docker run -d --name osrm_hcm -p 5000:5000 -v "${PWD}:/data" ghcr.io/project-osrm/osrm-backend osrm-routed --algorithm mld /data/hcm_2026.osrm
-```
-
-Kiểm tra server đã sẵn sàng hoạt động:
-```powershell
-curl http://localhost:5000/route/v1/driving/106.69805,10.77255;106.70317,10.77663
-```
-
----
-
-### Bước 3: Chạy Toàn trình Dự án & Tạo Bản đồ (`main.py`)
-```powershell
-# Chạy với máy chủ OSRM local (port 5000):
-$env:OSRM_BASE_URL="http://localhost:5000"
-python main.py
-
-# Hoặc nếu dùng server mặc định:
+$env:OSRM_BASE_URL="http://localhost:5001"
 python main.py
 ```
-- **Kết quả xuất ra**:
-  - In thông tin geocoding các điểm.
-  - Ma trận `output/distance_matrix.csv` và `output/duration_matrix.csv`.
-  - Kết quả số điểm phục vụ thành công $k$, các điểm bị bỏ lại, tổng km, tổng phút của từng thuật toán.
-  - File bản đồ `output/route_map.html`.
-- **Xem bản đồ**: Nhấp đúp mở `output/route_map.html` trên trình duyệt web. Bạn sẽ thấy các điểm phục vụ được đánh số thứ tự dừng $1 \to 2 \to 3...$ và các điểm không kịp giao được gắn huy hiệu màu xám `✕`.
 
 ---
 
-### Bước 4: Chạy Phân tích Thuật toán Offline (`run_algorithms.py`)
-Khi đã có file ma trận `output/distance_matrix.csv`, bạn có thể chạy thử nghiệm thuật toán mà không cần bật Docker hay kết nối mạng:
-
-```powershell
-# Chạy toàn bộ 3 thuật toán + Bảng phân tích độ phức tạp:
-python run_algorithms.py
-
-# Chỉ chạy kiểm tra thuật toán Tham lam (Greedy):
-python run_algorithms.py --alg greedy
-
-# Chỉ chạy thuật toán Quy hoạch động (DP):
-python run_algorithms.py --alg dp
-
-# Chạy riêng phân tích độ phức tạp:
-python run_algorithms.py --test
-```
-
----
-
-## 📂 7. Cấu trúc Thư mục Dự án
+## 📂 Phần 5: Cấu Trúc Thư Mục Dự Án
 
 ```text
 tsp_osrm_demo/
 │
-├── compose.yaml                    # Docker Compose cấu hình OSRM và Python App
-├── Dockerfile.osmium               # Dockerfile build môi trường osmium-tool cắt bản đồ
+├── compose.yaml                    # Cấu hình Docker dịch vụ OSRM backend local
+├── Dockerfile.osmium               # Dockerfile build môi trường cắt trích xuất bản đồ
 ├── motorcycle.lua                  # Tệp cấu hình luật lưu thông xe máy Việt Nam
 ├── vietnam-261105.osm.pbf          # Dữ liệu OSM thô toàn quốc Việt Nam (~332 MB)
-├── hcm_2026.osm.pbf                # Dữ liệu bản đồ sau khi trích xuất TP.HCM (~29.7 MB)
-├── hcm_2026.osrm*                  # Bộ tệp chỉ mục đồ thị mạng lưới MLD sau khi tiền xử lý
+├── hcm_2026.osm.pbf                # Bản đồ sau khi cắt trích xuất riêng TP.HCM (~29.7 MB)
+├── hcm_2026.osrm*                  # Bộ tệp chỉ mục đồ thị mạng lưới MLD xe máy TP.HCM
 │
 └── tsp_osrm_demo/                  # Thư mục mã nguồn chính của ứng dụng
-    ├── places.csv                  # Danh sách điểm giao hàng đầu vào & giới hạn thời gian cứng
+    ├── app.py                      # Ứng dụng Web tương tác Streamlit (theo đặc tả SRS v1.1)
+    ├── main.py                     # Điều phối toàn trình CLI, đo thời gian thực nghiệm & Benchmark
+    ├── thuat_toan.py               # 3 thuật toán Selective TSP: Backtracking, Greedy, DP Held-Karp
+    ├── api_calls.py                # Wrapper OSRM Table API, Route API & Geocoding ArcGIS
+    ├── output.py                   # Xuất ma trận CSV, tạo bản đồ Folium (thứ tự vàng, dấu ✕)
+    ├── places.csv                  # Danh sách điểm giao hàng mẫu & giới hạn thời gian cứng
     ├── coords_cache.json           # Bộ đệm lưu trữ tọa độ đã geocode (tránh gọi lại API)
-    ├── main.py                     # Điều phối toàn trình (Online OSRM + GIS Folium Map)
-    ├── thuat_toan.py               # Hiện thực 3 thuật toán Selective TSP: Backtracking, Greedy, DP Held-Karp
-    ├── api_calls.py                # Wrapper gọi OSRM Table API, Route API & Geocoding ArcGIS
-    ├── output.py                   # Xuất ma trận CSV, vẽ bản đồ Folium với thứ tự lộ trình & điểm bỏ qua
-    ├── run_algorithms.py           # Module chạy phân tích thực nghiệm & benchmark offline
     ├── Dockerfile                  # Dockerfile đóng gói ứng dụng Python
-    ├── requirements.txt            # Danh mục thư viện Python (requests, folium, branca)
+    ├── requirements.txt            # Danh mục thư viện Python (streamlit, folium, plotly, pandas...)
     ├── README.md                   # Tài liệu phân tích và hướng dẫn kỹ thuật chi tiết
     └── output/
         ├── distance_matrix.csv     # Ma trận khoảng cách thực tế giữa các điểm (km)
@@ -357,4 +325,4 @@ tsp_osrm_demo/
 ```
 
 ---
-*Tài liệu được xây dựng phục vụ nghiên cứu và thực nghiệm bài toán Tối ưu hóa Lộ trình Vận chuyển Chọn lọc (Selective TSP / Orienteering) trên dữ liệu không gian địa lý đô thị thực tế.*
+*Dự án thuộc đề tài: Phân tích & Thiết kế Giải thuật — Tối ưu hóa lộ trình vận chuyển chọn lọc có ràng buộc thời gian ca làm việc (Time-Constrained Selective TSP) trên mạng lưới giao thông đường bộ Thành phố Hồ Chí Minh.*
