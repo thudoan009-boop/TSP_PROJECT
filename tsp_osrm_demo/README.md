@@ -292,132 +292,23 @@ curl http://localhost:5000/route/v1/driving/106.69805,10.77255;106.70317,10.7766
 
 ### Bước 3: Chạy Toàn trình Dự án & Tạo Bản đồ (`main.py`)
 ```powershell
-# Chạy với máy chủ OSRM local (port 5000):
-$env:OSRM_BASE_URL="http://localhost:5000"
-python main.py
-
-# Hoặc nếu dùng server mặc định:
-python main.py
-```
-- **Kết quả xuất ra**:
-  - In thông tin geocoding các điểm.
-  - Ma trận `output/distance_matrix.csv` và `output/duration_matrix.csv`.
-  - Kết quả số điểm phục vụ thành công $k$, các điểm bị bỏ lại, tổng km, tổng phút của từng thuật toán.
-  - File bản đồ `output/route_map.html`.
-- **Xem bản đồ**: Nhấp đúp mở `output/route_map.html` trên trình duyệt web. Bạn sẽ thấy các điểm phục vụ được đánh số thứ tự dừng $1 \to 2 \to 3...$ và các điểm không kịp giao được gắn huy hiệu màu xám `✕`.
-
----
-
-### Bước 4: Chạy Phân tích Thuật toán Offline (`run_algorithms.py`)
-
-> **Mục đích**: File này dùng để **chạy thuần thuật toán**, kiểm thử tính đúng đắn và đo thời gian thực nghiệm — **hoàn toàn offline**, không cần Docker, không cần OSRM, không cần kết nối mạng.
-
-> **Điều kiện**: Cần có file `output/distance_matrix.csv` (được tạo sẵn khi chạy `main.py` ở Bước 3). Nếu chưa có, chương trình sẽ tự dùng bộ dữ liệu mẫu 4 điểm để minh họa.
-
-#### 4.1. Các lệnh chạy
-
-```powershell
-# Di chuyển vào thư mục code:
+# Di chuyển vào thư mục code chính:
 cd tsp_osrm_demo
 
-# ── Lệnh 1: Chạy đầy đủ (3 thuật toán + Benchmark) ──
-python run_algorithms.py
+# Chạy chương trình:
+python main.py
 ```
-
-**Kết quả mẫu trên Terminal:**
-```text
-[INFO] Đọc ma trận từ distance_matrix.csv (N=5)
-
-Ma trận khoảng cách (5×5):
-  [   0.00    0.52    1.36    0.94    1.45 ]
-  [   0.47    0.00    1.23    0.91    1.36 ]
-  [   1.38    1.44    0.00    0.77    0.95 ]
-  [   0.82    0.89    1.18    0.00    1.82 ]
-  [   1.73    1.65    1.78    2.04    0.00 ]
-
-==== VÉT CẠN (BACKTRACKING) (O((N-1)!)) ====
-  Chi phí: 3.34
-  Lộ trình: 0 1 2 3 0
-  (Bưu điện Trung tâm → Nhà thờ Đức Bà → Chợ Bến Thành → Nhà hát Thành phố → Bưu điện Trung tâm)
-  Thời gian thực nghiệm: 0.020 ms
-  🎯 Phục vụ 3/4 điểm (≤ 7.0p) | Bỏ qua: Công viên Tao Đàn
-
-==== THAM LAM (GREEDY) (O(N²)) ====
-  Chi phí: 2.25
-  Lộ trình: 0 1 3 0
-  (Bưu điện Trung tâm → Nhà thờ Đức Bà → Nhà hát Thành phố → Bưu điện Trung tâm)
-  Thời gian thực nghiệm: 0.006 ms
-  🎯 Phục vụ 2/4 điểm (≤ 7.0p) | Bỏ qua: Chợ Bến Thành, Công viên Tao Đàn
-
-==== QUY HOẠCH ĐỘNG (DP HELD-KARP) (O(N²·2ᴺ)) ====
-  Chi phí: 3.34
-  Lộ trình: 0 1 2 3 0
-  Thời gian thực nghiệm: 0.063 ms
-  🎯 Phục vụ 3/4 điểm (≤ 7.0p) | Bỏ qua: Công viên Tao Đàn
-
-======================================================================
-        BENCHMARK ĐỘ PHỨC TẠP THỰC NGHIỆM
-======================================================================
-Thuật toán                     | Lý thuyết       |     Thực nghiệm
-----------------------------------------------------------------------
-  Vét cạn (Backtracking)       | O((N-1)!)       |        0.038 ms
-  Tham lam (Greedy)            | O(N²)           |        0.005 ms
-  Quy hoạch động (DP Held-Karp) | O(N²·2ᴺ)       |        0.064 ms
-======================================================================
-```
-
-```powershell
-# ── Lệnh 2: Chỉ chạy Unit Test kiểm tra tính đúng đắn ──
-python run_algorithms.py --test
-```
-
-**Kết quả mẫu:**
-```text
-============================================================
-           BỘ UNIT TEST KIỂM THỬ THUẬT TOÁN
-============================================================
-Ma trận N = 5, Ràng buộc: 7.0 phút
-
-  [TEST 1] Backtracking   : 3/4 điểm | Chi phí = 3.3400 (Optimal) | PASSED ✅
-  [TEST 2] Greedy         : 2/4 điểm | Chi phí = 2.2500 (gấp 0.67× optimal) | PASSED ✅
-  [TEST 3] DP             : 3/4 điểm | Chi phí = 3.3400 (Optimal) | PASSED ✅
-  [TEST 4] Ràng buộc thời gian ≤ 7.0p: PASSED ✅
-------------------------------------------------------------
-KẾT QUẢ: TẤT CẢ PASSED 🎉
-============================================================
-```
-
-```powershell
-# ── Lệnh 3: Chỉ chạy 1 thuật toán cụ thể ──
-python run_algorithms.py --alg greedy          # Chỉ Greedy
-python run_algorithms.py --alg dp              # Chỉ DP
-python run_algorithms.py --alg backtracking    # Chỉ Backtracking
-python run_algorithms.py --alg greedy dp       # Greedy + DP (bỏ Backtracking)
-```
-
-#### 4.2. Tổng hợp các tùy chọn (flags)
-
-| Lệnh | Ý nghĩa |
-| :--- | :--- |
-| `python run_algorithms.py` | Chạy đầy đủ: in ma trận → 3 thuật toán → benchmark |
-| `python run_algorithms.py --test` | Chỉ chạy **Unit Test** kiểm tra tính đúng đắn |
-| `python run_algorithms.py --alg <tên>` | Chỉ chạy thuật toán được chọn (`backtracking`, `greedy`, `dp`) |
-
-#### 4.3. Giải thích nội dung kết quả
-
-| Mục hiển thị | Ý nghĩa |
-| :--- | :--- |
-| **Chi phí** | Tổng quãng đường lộ trình (km) |
-| **Lộ trình** | Chuỗi chỉ số các điểm theo thứ tự ghé thăm (0 = Depot) |
-| **Thời gian thực nghiệm** | Thời gian CPU chạy thuật toán (mili-giây), đo bằng `perf_counter` |
-| **Phục vụ k/N điểm** | Số điểm giao thành công / tổng số điểm cần giao |
-| **Bỏ qua: ...** | Tên các điểm không kịp giao do hết thời gian ca |
-| **BENCHMARK** | Bảng so sánh thời gian thực tế vs độ phức tạp lý thuyết |
-| **Unit Test PASSED/FAILED** | Kiểm tra chu trình hợp lệ, tính tối ưu, ràng buộc thời gian |
+- **Kết quả xuất ra trên Terminal**:
+  - In thông tin geocoding các điểm.
+  - Ma trận `output/distance_matrix.csv` và `output/duration_matrix.csv`.
+  - Kết quả chi tiết của từng thuật toán: Số điểm giao thành công $k$, các điểm bị bỏ lại, tổng km, tổng thời gian di chuyển, và **Thời gian thực nghiệm (ms)**.
+  - **BẢNG BENCHMARK ĐỘ PHỨC TẠP THỰC NGHIỆM** đối chiếu lý thuyết vs thực nghiệm.
+  - File bản đồ `output/route_map.html`.
+- **Xem bản đồ**: Nhấp đúp mở `output/route_map.html` trên trình duyệt web. Bạn sẽ thấy các điểm phục vụ được đánh số thứ tự dừng $1 \to 2 \to 3...$ màu vàng hổ phách và các điểm không kịp giao được gắn huy hiệu màu xám `✕`.
 
 ---
 
-### Bước 5: Khởi chạy Ứng dụng Web Tương tác (Streamlit Web App - `app.py`)
+### Bước 4: Khởi chạy Ứng dụng Web Tương tác (Streamlit Web App - `app.py`)
 
 Hệ thống cung cấp giao diện Web trực quan theo đúng tài liệu đặc tả SRS:
 - **Nguồn địa điểm**: Chọn Preset Demo (5, 8, 12 điểm) hoặc Nhập địa chỉ thủ công kèm Geocoding tự động.
@@ -453,11 +344,10 @@ tsp_osrm_demo/
     ├── app.py                      # Giao diện Web tương tác Streamlit (theo đặc tả SRS v1.1)
     ├── places.csv                  # Danh sách điểm giao hàng đầu vào & giới hạn thời gian cứng
     ├── coords_cache.json           # Bộ đệm lưu trữ tọa độ đã geocode (tránh gọi lại API)
-    ├── main.py                     # Điều phối toàn trình CLI (Online OSRM + GIS Folium Map)
+    ├── main.py                     # Điều phối toàn trình CLI: Đo thời gian thực nghiệm & in bảng Benchmark
     ├── thuat_toan.py               # Hiện thực 3 thuật toán Selective TSP: Backtracking, Greedy, DP Held-Karp
     ├── api_calls.py                # Wrapper gọi OSRM Table API, Route API & Geocoding ArcGIS
     ├── output.py                   # Xuất ma trận CSV, vẽ bản đồ Folium với thứ tự lộ trình & điểm bỏ qua
-    ├── run_algorithms.py           # Module chạy phân tích thực nghiệm & benchmark offline
     ├── Dockerfile                  # Dockerfile đóng gói ứng dụng Python & Web App
     ├── requirements.txt            # Danh mục thư viện Python (streamlit, folium, plotly, requests, pandas)
     ├── README.md                   # Tài liệu phân tích và hướng dẫn kỹ thuật chi tiết
