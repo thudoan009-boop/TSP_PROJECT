@@ -45,27 +45,41 @@ def geocode_address(address: str, timeout: int = 30) -> Tuple[float, float]:
         return DEFAULT_COORDS[address]
 
     url = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates"
-    try:
-        resp = requests.get(
-            url,
-            params={"SingleLine": address, "f": "json", "maxLocations": 1},
-            timeout=timeout,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        candidates = data.get("candidates", [])
-        if not candidates:
-            raise ValueError(f"Không tìm được tọa độ cho địa chỉ: {address}")
-        loc = candidates[0]["location"]
-        lat, lon = float(loc["y"]), float(loc["x"])
-        cache[address] = [lat, lon]
-        with cache_path.open("w", encoding="utf-8") as f:
-            json.dump(cache, f, ensure_ascii=False, indent=2)
-        return lat, lon
-    except Exception as exc:
-        if address in DEFAULT_COORDS:
-            return DEFAULT_COORDS[address]
-        raise RuntimeError(f"Không thể định vị địa chỉ '{address}': {exc}")
+    clean_addr = address.strip()
+
+    # Chiến lược định vị thông minh:
+    # 1. Thử tìm đúng địa chỉ người dùng nhập (hỗ trợ toàn bộ các tỉnh thành trên cả nước: Tây Ninh, Hà Nội, Đà Nẵng...)
+    # 2. Nếu không tìm thấy và địa chỉ chưa có tên tỉnh/thành, thử dự phòng ghép thêm ", TP.HCM"
+    search_queries = [clean_addr]
+    if not any(k in clean_addr.lower() for k in ["tỉnh", "tp", "thành phố", "hcm", "hà nội"]):
+        search_queries.append(f"{clean_addr}, TP.HCM")
+
+    for query in search_queries:
+        try:
+            resp = requests.get(
+                url,
+                params={"SingleLine": query, "f": "json", "maxLocations": 1},
+                timeout=timeout,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            candidates = data.get("candidates", [])
+            if candidates:
+                loc = candidates[0]["location"]
+                lat, lon = float(loc["y"]), float(loc["x"])
+                cache[clean_addr] = [lat, lon]
+                try:
+                    with cache_path.open("w", encoding="utf-8") as f:
+                        json.dump(cache, f, ensure_ascii=False, indent=2)
+                except Exception:
+                    pass
+                return lat, lon
+        except Exception:
+            continue
+
+    if clean_addr in DEFAULT_COORDS:
+        return DEFAULT_COORDS[clean_addr]
+    raise RuntimeError(f"Không thể định vị địa chỉ '{address}'. Gợi ý: Ghi kèm tên Phường/Xã hoặc Tỉnh/Thành phố.")
 
 # ---------------------------------------------------------------------------
 # Load places from CSV, tự động geocode những dòng chưa có lat/lon.

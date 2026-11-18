@@ -14,7 +14,8 @@ Hệ thống kết hợp dịch vụ định tuyến **OSRM Public API (nền Op
    - 4.1. Cài đặt môi trường
    - 4.2. Chạy ứng dụng Web trực quan (`app.py`)
    - 4.3. Chạy báo cáo dòng lệnh CLI (`main.py`)
-   - 4.4. Cách sử dụng trên giao diện Web
+   - 4.4. Cách sử dụng trên giao diện Web (`app.py`)
+   - 4.5. Kiểm thử ứng suất quy mô lớn với ma trận giả lập (`generate_synthetic_matrix.py`)
 5. [Nghiên cứu mở rộng & Hướng phát triển](#5-nghiên-cứu-mở-rộng--hướng-phát-triển)
 6. [Cấu trúc thư mục dự án](#6-cấu-trúc-thư-mục-dự-án)
 

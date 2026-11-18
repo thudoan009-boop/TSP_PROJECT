@@ -217,6 +217,9 @@ if "manual_stops" not in st.session_state:
 if "optimization_results" not in st.session_state:
     st.session_state.optimization_results = None
 
+if "geocoded_preview_places" not in st.session_state:
+    st.session_state.geocoded_preview_places = None
+
 # ==============================================================================
 # GIAO DIỆN CHÍNH: 2 CỘT (ĐIỀU KHIỂN & KẾT QUẢ)
 # ==============================================================================
@@ -302,23 +305,87 @@ with col_ctrl:
         if st.button("🔍 Kiểm tra & Định vị tọa độ (Geocoding)"):
             with st.spinner("Đang định vị địa chỉ qua ArcGIS Geocoding..."):
                 all_good = True
+                preview_list = []
+
+                # Định vị Kho DEPOT
                 try:
                     lat, lon = geocode_address(st.session_state.manual_depot["address"])
                     st.session_state.manual_depot["lat"], st.session_state.manual_depot["lon"] = lat, lon
+                    preview_list.append({
+                        "Mã": "DEPOT",
+                        "Tên địa điểm": st.session_state.manual_depot["name"],
+                        "Địa chỉ": st.session_state.manual_depot["address"],
+                        "Tọa độ": f"{lat:.5f}, {lon:.5f}",
+                        "Trạng thái": "✅ Thành công",
+                        "lat": lat,
+                        "lon": lon,
+                        "is_depot": True,
+                    })
                 except Exception as exc:
-                    st.error(f"❌ Lỗi định vị Kho: {exc}")
+                    st.error(f"❌ Lỗi định vị Kho DEPOT: {exc}")
+                    preview_list.append({
+                        "Mã": "DEPOT",
+                        "Tên địa điểm": st.session_state.manual_depot["name"],
+                        "Địa chỉ": st.session_state.manual_depot["address"],
+                        "Tọa độ": "Chưa có",
+                        "Trạng thái": f"❌ Lỗi",
+                        "lat": None,
+                        "lon": None,
+                        "is_depot": True,
+                    })
                     all_good = False
-                
-                for s in st.session_state.manual_stops:
+
+                # Định vị các Điểm giao hàng
+                for idx, s in enumerate(st.session_state.manual_stops, 1):
                     try:
                         lat, lon = geocode_address(s["address"])
                         s["lat"], s["lon"] = lat, lon
+                        preview_list.append({
+                            "Mã": f"P{idx}",
+                            "Tên địa điểm": s["name"],
+                            "Địa chỉ": s["address"],
+                            "Tọa độ": f"{lat:.5f}, {lon:.5f}",
+                            "Trạng thái": "✅ Thành công",
+                            "lat": lat,
+                            "lon": lon,
+                            "is_depot": False,
+                        })
                     except Exception as exc:
-                        st.error(f"❌ Không thể định vị '{s['name']}': {exc}")
+                        st.error(f"❌ Không thể định vị điểm #{idx} '{s['name']}': {exc}")
+                        preview_list.append({
+                            "Mã": f"P{idx}",
+                            "Tên địa điểm": s["name"],
+                            "Địa chỉ": s["address"],
+                            "Tọa độ": "Chưa có",
+                            "Trạng thái": f"❌ Lỗi",
+                            "lat": None,
+                            "lon": None,
+                            "is_depot": False,
+                        })
                         all_good = False
-                        
-                if all_good:
-                    st.success("✅ Toàn bộ địa chỉ đã được định vị thành công!")
+
+                st.session_state.geocoded_preview_places = preview_list
+                st.session_state.optimization_results = None  # Reset để bản đồ bên phải chuyển sang chế độ xem trước
+
+        # Hiển thị bảng kết quả và trạng thái định vị
+        if st.session_state.get("geocoded_preview_places"):
+            st.markdown("---")
+            st.markdown("**📍 Bảng kết quả định vị tọa độ:**")
+            display_df = pd.DataFrame([
+                {
+                    "Mã": item["Mã"],
+                    "Tên địa điểm": item["Tên địa điểm"],
+                    "Địa chỉ": item["Địa chỉ"],
+                    "Tọa độ (Lat, Lon)": item["Tọa độ"],
+                    "Trạng thái": item["Trạng thái"],
+                }
+                for item in st.session_state.geocoded_preview_places
+            ])
+            st.dataframe(display_df, hide_index=True, use_container_width=True)
+            if all(item.get("lat") for item in st.session_state.geocoded_preview_places):
+                st.success("✅ Toàn bộ địa chỉ đã được định vị thành công và cắm cờ xem trước trên bản đồ!")
+            else:
+                st.warning("⚠️ Có điểm chưa tìm được tọa độ. Vui lòng kiểm tra lại tên đường/quận.")
 
     # --------------------------------------------------------------------------
     # FR-02: NHẬP GIỚI HẠN THỜI GIAN (BẮT BUỘC KHÔNG DÙNG SLIDER)
@@ -527,20 +594,51 @@ with col_main:
     opt_data = st.session_state.optimization_results
     
     if not opt_data:
-        st.info("👈 Vui lòng chọn dữ liệu địa điểm ở cột bên trái và bấm **[ 🚀 Tối ưu hóa lộ trình ]** để xem kết quả.")
-        # Hiển thị bản đồ tổng quan ban đầu
-        m_preview = folium.Map(
-            location=[10.77984, 106.70001],
-            zoom_start=14,
-            tiles="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
-            attr="Google Maps",
-        )
-        folium.Marker(
-            [10.77984, 106.70001],
-            tooltip="<b>Bưu điện Trung tâm TP.HCM (DEPOT)</b>",
-            icon=folium.Icon(color="red", icon="home", prefix="fa"),
-        ).add_to(m_preview)
-        st.components.v1.html(m_preview.get_root().render(), height=500)
+        preview_pins = st.session_state.get("geocoded_preview_places")
+        valid_pins = [p for p in preview_pins if p.get("lat") and p.get("lon")] if preview_pins else []
+
+        if valid_pins:
+            st.success("📍 **Bản đồ xem trước các vị trí đã định vị (Geocoding):** Hãy bấm nút **[ 🚀 Tối ưu hóa lộ trình ]** ở cột trái để bắt đầu tìm tuyến đường tối ưu!")
+            center_lat = sum(p["lat"] for p in valid_pins) / len(valid_pins)
+            center_lon = sum(p["lon"] for p in valid_pins) / len(valid_pins)
+            
+            m_preview = folium.Map(
+                location=[center_lat, center_lon],
+                zoom_start=14,
+                tiles="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                attr="Google Maps",
+            )
+            for p in valid_pins:
+                if p.get("is_depot"):
+                    folium.Marker(
+                        [p["lat"], p["lon"]],
+                        tooltip=f"<b>Kho DEPOT: {p['Tên địa điểm']}</b>",
+                        popup=f"<b>Kho DEPOT: {p['Tên địa điểm']}</b><br>{p['Địa chỉ']}<br>({p['lat']:.5f}, {p['lon']:.5f})",
+                        icon=folium.Icon(color="red", icon="home", prefix="fa"),
+                    ).add_to(m_preview)
+                else:
+                    folium.Marker(
+                        [p["lat"], p["lon"]],
+                        tooltip=f"<b>{p['Mã']}: {p['Tên địa điểm']}</b>",
+                        popup=f"<b>{p['Tên địa điểm']}</b><br>{p['Địa chỉ']}<br>({p['lat']:.5f}, {p['lon']:.5f})",
+                        icon=folium.Icon(color="blue", icon="map-marker", prefix="fa"),
+                    ).add_to(m_preview)
+            st.components.v1.html(m_preview.get_root().render(), height=550)
+        else:
+            st.info("👈 Vui lòng chọn dữ liệu địa điểm ở cột bên trái và bấm **[ 🚀 Tối ưu hóa lộ trình ]** để xem kết quả.")
+            # Hiển thị bản đồ tổng quan ban đầu
+            m_preview = folium.Map(
+                location=[10.77984, 106.70001],
+                zoom_start=14,
+                tiles="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                attr="Google Maps",
+            )
+            folium.Marker(
+                [10.77984, 106.70001],
+                tooltip="<b>Bưu điện Trung tâm TP.HCM (DEPOT)</b>",
+                icon=folium.Icon(color="red", icon="home", prefix="fa"),
+            ).add_to(m_preview)
+            st.components.v1.html(m_preview.get_root().render(), height=500)
     else:
         places = opt_data["places"]
         results = opt_data["results"]
