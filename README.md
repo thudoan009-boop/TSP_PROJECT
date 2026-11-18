@@ -130,6 +130,21 @@ Giao diện được thiết kế trực quan gồm 2 cột:
 
 ---
 
+### 4.5. Kiểm thử ứng suất quy mô lớn với ma trận giả lập (`generate_synthetic_matrix.py`)
+Phục vụ việc tái lập và kiểm chứng thực nghiệm **Bảng 5.2 trong báo cáo đồ án** ở các quy mô cực lớn ($N = 100, 500, 1.000$ điểm):
+
+```powershell
+python tsp_osrm_demo/generate_synthetic_matrix.py
+```
+- **Nguyên lý hoạt động:**
+  1. Tự động sinh ngẫu nhiên $N$ tọa độ trong nội thành TP.HCM (Lat: $10.70 - 10.85$, Lon: $106.60 - 106.75$).
+  2. Xây dựng ma trận khoảng cách đường bộ (nhân hệ số uốn lượn $1.3$) và ma trận thời gian theo vận tốc đô thị $30\text{ km/h}$.
+  3. Cố định thời gian ca $X = 30$ phút (chuẩn theo thiết lập Bảng 5.2).
+  4. Chạy kiểm thử, đo thời gian thực thi bằng `time.perf_counter()` và in bảng so sánh trực tiếp trên Terminal trong tích tắc.
+- **Dữ liệu xuất ra:** Tự động tạo và lưu ma trận mẫu $100 \times 100$ vào `tsp_osrm_demo/output/distance_matrix_100.csv` và `duration_matrix_100.csv` để đối chứng.
+
+---
+
 ## 5. Nghiên cứu mở rộng & Hướng phát triển
 
 ### 5.1. Thử nghiệm mở rộng với OSRM Docker Local
@@ -158,6 +173,7 @@ tsp_osrm_demo/
 │   ├── output.py                   # Tạo bản đồ Folium và xuất ma trận chi phí
 │   ├── places.csv                  # Dữ liệu danh sách địa điểm kiểm thử mặc định
 │   ├── coords_cache.json           # Bộ đệm lưu trữ tọa độ đã tra cứu
+│   ├── generate_synthetic_matrix.py # Sinh ma trận giả lập & kiểm thử ứng suất N = 100, 500, 1000
 │   ├── requirements.txt            # Danh sách thư viện Python cần cài đặt
 │   └── output/                     # Thư mục chứa kết quả xuất ra (bản đồ, ma trận csv)
 │       └── route_map.html          # Bản đồ số tương tác Folium
