@@ -348,7 +348,7 @@ with col_ctrl:
         "Thuật toán thực thi:",
         options=["Vét cạn (Backtracking)", "Tham lam (Greedy)", "Quy hoạch động (DP)"],
         default=["Vét cạn (Backtracking)", "Tham lam (Greedy)", "Quy hoạch động (DP)"],
-        help="Mặc định chạy cả 3 để so sánh. Nếu giảng viên yêu cầu chạy riêng 1 thuật toán, bạn chỉ cần chọn thuật toán đó.",
+        help="Mặc định chạy cả 3 để so sánh. Nếu muốn chạy riêng 1 thuật toán chỉ cần chọn thuật toán đó.",
     )
 
     # --------------------------------------------------------------------------
@@ -605,7 +605,7 @@ with col_main:
                 help="Chọn 1 tuyến duy nhất để quan sát rõ ràng số thứ tự dừng mà không bị chồng lấn.",
             )
         with c_hint:
-            st.caption("💡 *Huy hiệu tròn vàng hổ phách (**1, 2, 3...**) chỉ số thứ tự dừng. Huy hiệu xám (**✕**) đánh dấu điểm bị bỏ qua.*")
+            st.caption("💡 *Huy hiệu tròn vàng(**1, 2, 3...**) chỉ số thứ tự dừng. Huy hiệu xám (**✕**) đánh dấu điểm bị bỏ qua.*")
 
         # Lọc kết quả nếu người dùng chỉ muốn xem 1 tuyến
         if view_option == "Tất cả các tuyến (bật/tắt LayerControl)":
