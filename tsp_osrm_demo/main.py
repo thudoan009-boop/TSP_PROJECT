@@ -22,7 +22,7 @@ INPUT_FILE = ROOT / "places.csv"
 OUTPUT_DIR = ROOT / "output"
 
 # OSRM endpoint & profile (có thể ghi đè qua biến môi trường)
-OSRM_BASE_URL = os.getenv("OSRM_BASE_URL","http://localhost:5001").rstrip("/")
+OSRM_BASE_URL = os.getenv("OSRM_BASE_URL","https://router.project-osrm.org").rstrip("/")
 OSRM_PROFILE = os.getenv("OSRM_PROFILE", "driving")  # 'driving', 'bike', hoặc 'motorcycle'
 REQUEST_TIMEOUT = 30
 

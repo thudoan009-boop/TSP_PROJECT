@@ -339,7 +339,7 @@ with col_ctrl:
     with st.expander("🌐 Cấu hình máy chủ OSRM"):
         osrm_url = st.text_input("OSRM Base URL:", value=os.getenv("OSRM_BASE_URL", "https://router.project-osrm.org"))
         st.markdown("**Phương tiện mặc định:** 🚗 **OSRM Public Server (Driving)**")
-        st.caption("ℹ️ *Cố định theo đề tài: Tối ưu hóa lộ trình cho shipper tại mạng đường TP.HCM.*")
+        st.caption("ℹ️ *Tối ưu hóa lộ trình cho shipper theo giao thông Việt Nam*")
 
     # --------------------------------------------------------------------------
     # FR-03: NÚT TỐI ƯU HÓA LỘ TRÌNH
