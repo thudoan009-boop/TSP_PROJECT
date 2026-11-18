@@ -93,9 +93,20 @@ streamlit run tsp_osrm_demo/app.py
 ---
 
 ### 4.3. Chạy báo cáo dòng lệnh CLI (`main.py`)
-Nếu bạn muốn đo đạc Benchmark nhanh và xuất file báo cáo HTML:
+Hỗ trợ chạy cả 3 thuật toán để so sánh hoặc **chạy riêng lẻ từng thuật toán theo yêu cầu của giảng viên**:
+
 ```powershell
+# Chạy cả 3 thuật toán để so sánh benchmark (mặc định):
 python tsp_osrm_demo/main.py
+
+# Chỉ chạy riêng thuật toán Tham lam (Greedy):
+python tsp_osrm_demo/main.py --algo greedy
+
+# Chỉ chạy riêng thuật toán Vét cạn (Backtracking):
+python tsp_osrm_demo/main.py --algo bt
+
+# Chỉ chạy riêng thuật toán Quy hoạch động (Held-Karp DP):
+python tsp_osrm_demo/main.py --algo dp
 ```
 - **Terminal:** In chi tiết chặng đi, số điểm phục vụ, thời gian chạy thực nghiệm ($ms$) và Bảng Benchmark đối chứng lý thuyết vs thực nghiệm.
 - **Bản đồ:** Tự động lưu bản đồ vào `tsp_osrm_demo/output/route_map.html` (nhấp đúp chuột để mở trên trình duyệt).
@@ -108,6 +119,7 @@ Giao diện được thiết kế trực quan gồm 2 cột:
 1. **Cột trái (Thiết lập bài toán):**
    - **Nguồn dữ liệu:** Chọn **Preset Demo** (có sẵn 3 bộ dữ liệu chuẩn: *Nhỏ 5 điểm*, *Vừa 8 điểm*, *Lớn 12 điểm* tại Quận 1 TP.HCM) hoặc chọn **Nhập địa chỉ thủ công** để tự gõ địa chỉ tùy ý.
    - **Giới hạn thời gian ca làm việc (phút):** Nhập số phút mong muốn (ví dụ: `7` hoặc `30`). Nếu muốn tìm lộ trình qua toàn bộ 100% các điểm, chỉ cần **để trống ô này**.
+   - **Chọn thuật toán chạy:** Hộp chọn cho phép bật/tắt linh hoạt (chọn chạy riêng lẻ 1 thuật toán bất kỳ hoặc chạy cả 3 thuật toán để so sánh).
    - Bấm nút **🚀 Tối ưu hóa lộ trình**.
 2. **Cột phải (Bảng điều khiển kết quả):**
    - **3 Thẻ Key Metrics:** Xem tổng quãng đường (km), thời gian di chuyển (phút), số điểm hoàn thành ($k/n$) và thời gian thực thi của từng thuật toán.

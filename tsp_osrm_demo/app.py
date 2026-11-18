@@ -341,6 +341,16 @@ with col_ctrl:
         st.markdown("**Phương tiện mặc định:** 🚗 **OSRM Public Server (Driving)**")
         st.caption("ℹ️ *Tối ưu hóa lộ trình cho shipper theo giao thông Việt Nam*")
 
+    # Chọn thuật toán chạy (Hỗ trợ chạy riêng lẻ hoặc cả 3)
+    st.markdown("---")
+    st.markdown("### Chọn thuật toán chạy")
+    selected_algos = st.multiselect(
+        "Thuật toán thực thi:",
+        options=["Vét cạn (Backtracking)", "Tham lam (Greedy)", "Quy hoạch động (DP)"],
+        default=["Vét cạn (Backtracking)", "Tham lam (Greedy)", "Quy hoạch động (DP)"],
+        help="Mặc định chạy cả 3 để so sánh. Nếu giảng viên yêu cầu chạy riêng 1 thuật toán, bạn chỉ cần chọn thuật toán đó.",
+    )
+
     # --------------------------------------------------------------------------
     # FR-03: NÚT TỐI ƯU HÓA LỘ TRÌNH
     # --------------------------------------------------------------------------
@@ -443,17 +453,25 @@ if btn_optimize:
             if matrix_ok:
                 max_time_s = (max_time_min * 60.0) if max_time_min is not None else None
                 
-                # 3. Chạy 3 thuật toán
+                # 3. Chạy các thuật toán được người dùng chọn
                 algorithms_to_run = {}
                 is_skip_bt = (input_mode == "Preset Demo" and len(final_places) >= 11 and skip_bt_for_large_n)
                 
-                if not is_skip_bt:
-                    algorithms_to_run["Vét cạn (Backtracking)"] = solve_backtracking
-                else:
-                    write_log("WARN", "Bỏ qua Backtracking vì số điểm N >= 11 (tránh làm chậm ứng dụng).")
+                if "Vét cạn (Backtracking)" in selected_algos:
+                    if not is_skip_bt:
+                        algorithms_to_run["Vét cạn (Backtracking)"] = solve_backtracking
+                    else:
+                        write_log("WARN", "Bỏ qua Backtracking vì số điểm N >= 11 (tránh làm chậm ứng dụng).")
 
-                algorithms_to_run["Tham lam (Greedy)"] = solve_greedy
-                algorithms_to_run["Quy hoạch động (DP)"] = solve_dynamic_programming
+                if "Tham lam (Greedy)" in selected_algos:
+                    algorithms_to_run["Tham lam (Greedy)"] = solve_greedy
+
+                if "Quy hoạch động (DP)" in selected_algos:
+                    algorithms_to_run["Quy hoạch động (DP)"] = solve_dynamic_programming
+
+                if not algorithms_to_run:
+                    st.error("❌ Vui lòng chọn ít nhất 1 thuật toán trong ô 'Chọn thuật toán chạy' ở cột trái!")
+                    st.stop()
 
                 results: Dict[str, Dict] = {}
                 geometries: Dict[str, Dict] = {}

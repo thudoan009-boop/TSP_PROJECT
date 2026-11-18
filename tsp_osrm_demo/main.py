@@ -11,6 +11,7 @@ from __future__ import annotations
 import sys
 import os
 import time
+import argparse
 from pathlib import Path
 import folium
 
@@ -38,6 +39,15 @@ from output import save_matrices, create_map
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="TSP Routing Demo (CLI)")
+    parser.add_argument(
+        "--algo", "-a",
+        choices=["all", "greedy", "bt", "dp"],
+        default="all",
+        help="Chọn thuật toán thực thi: all (chạy cả 3), greedy (Tham lam), bt (Vét cạn Backtracking), dp (Quy hoạch động Held-Karp)",
+    )
+    args = parser.parse_args()
+
     # Tạo thư mục output
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -57,20 +67,29 @@ def main() -> None:
     max_time_s = (float(max_time_min) * 60.0) if max_time_min is not None else None
     n = len(places)
 
-    algorithms = {
+    all_algorithms = {
         "Vét cạn (Backtracking)": {
+            "key": "bt",
             "func": solve_backtracking,
             "theory": "O((N-1)!)",
         },
         "Tham lam (Greedy)": {
+            "key": "greedy",
             "func": solve_greedy,
             "theory": "O(N²)",
         },
         "Quy hoạch động (DP)": {
+            "key": "dp",
             "func": solve_dynamic_programming,
             "theory": "O(N²·2ᴺ)",
         },
     }
+
+    if args.algo != "all":
+        algorithms = {name: data for name, data in all_algorithms.items() if data["key"] == args.algo}
+        print(f"\n⚡ Chế độ chạy riêng lẻ: Chỉ thực thi '{list(algorithms.keys())[0]}'")
+    else:
+        algorithms = all_algorithms
 
     results: dict[str, dict] = {}
     geometries: dict[str, dict] = {}
