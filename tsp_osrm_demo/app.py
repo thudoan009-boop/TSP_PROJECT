@@ -338,8 +338,8 @@ with col_ctrl:
     # Cấu hình OSRM
     with st.expander("🌐 Cấu hình máy chủ OSRM"):
         osrm_url = st.text_input("OSRM Base URL:", value=os.getenv("OSRM_BASE_URL", "https://router.project-osrm.org"))
-        st.markdown("**Phương tiện mặc định:** 🛵 **Xe máy (Motorcycle)**")
-        st.caption("ℹ️ *Cố định theo đề tài: Tối ưu hóa lộ trình cho shipper xe máy tại mạng đường TP.HCM.*")
+        st.markdown("**Phương tiện mặc định:** 🚗 **OSRM Public Server (Driving)**")
+        st.caption("ℹ️ *Cố định theo đề tài: Tối ưu hóa lộ trình cho shipper tại mạng đường TP.HCM.*")
 
     # --------------------------------------------------------------------------
     # FR-03: NÚT TỐI ƯU HÓA LỘ TRÌNH
@@ -423,19 +423,18 @@ if btn_optimize:
             matrix_ok = True
             distances = []
             durations = []
-            # Profile phương tiện: Nếu dùng OSRM public demo thì map sang driving (vì server public không host motorcycle)
-            # Nếu dùng OSRM local thì gọi thẳng motorcycle
-            profile_to_use = "driving" if "router.project-osrm.org" in osrm_url else "motorcycle"
+            # Profile phương tiện: sử dụng profile driving từ OSRM
+            profile_to_use = "driving"
 
             try:
-                with st.spinner("Đang lấy ma trận khoảng cách & thời gian từ OSRM (Xe máy)..."):
+                with st.spinner("Đang lấy ma trận khoảng cách & thời gian từ OSRM..."):
                     distances, durations = fetch_matrices(
                         final_places,
                         osrm_url.rstrip("/"),
                         profile=profile_to_use,
                         timeout=30,
                     )
-                write_log("OK", f"Đã nhận thành công ma trận chi phí {n}x{n} từ OSRM cho xe máy.")
+                write_log("OK", f"Đã nhận thành công ma trận chi phí {n}x{n} từ OSRM.")
             except Exception as exc:
                 st.error(f"❌ Lỗi kết nối OSRM Table API: {exc}")
                 write_log("ERR", f"Lỗi OSRM Table API: {exc}")
