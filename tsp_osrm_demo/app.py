@@ -335,11 +335,11 @@ with col_ctrl:
     )
     st.caption("ℹ️ *Để trống nếu không giới hạn thời gian.*")
 
-    # Cấu hình OSRM
+    # Cấu hình OSRM (mặc định trỏ về OSRM Docker xe máy local cổng 5001)
     with st.expander("🌐 Cấu hình máy chủ OSRM"):
-        osrm_url = st.text_input("OSRM Base URL:", value=os.getenv("OSRM_BASE_URL", "https://router.project-osrm.org"))
+        osrm_url = st.text_input("OSRM Base URL:", value=os.getenv("OSRM_BASE_URL", "http://localhost:5001"))
         st.markdown("**Phương tiện mặc định:** 🛵 **Xe máy (Motorcycle)**")
-        st.caption("ℹ️ *Cố định theo đề tài: Tối ưu hóa lộ trình cho shipper xe máy tại mạng đường TP.HCM.*")
+        st.caption("ℹ️ *Mặc định dùng OSRM Docker local (cổng 5001). Nếu không bật Docker, đổi thành: https://router.project-osrm.org*")
 
     # --------------------------------------------------------------------------
     # FR-03: NÚT TỐI ƯU HÓA LỘ TRÌNH

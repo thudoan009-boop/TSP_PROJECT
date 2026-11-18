@@ -21,9 +21,11 @@ if str(ROOT) not in sys.path:
 INPUT_FILE = ROOT / "places.csv"
 OUTPUT_DIR = ROOT / "output"
 
-# OSRM endpoint & profile (có thể ghi đè qua biến môi trường)
-OSRM_BASE_URL = os.getenv("OSRM_BASE_URL", "https://router.project-osrm.org").rstrip("/")
-OSRM_PROFILE = os.getenv("OSRM_PROFILE", "driving")  # 'driving', 'bike', hoặc 'motorcycle'
+# OSRM endpoint & profile (đọc biến môi trường, mặc định trỏ về OSRM Docker xe máy local cổng 5001)
+# - Mặc định đồ án: dùng OSRM local xe máy (http://localhost:5001 và profile 'motorcycle')
+# - Dự phòng (khi không bật Docker): đổi URL thành 'https://router.project-osrm.org' và profile 'driving'
+OSRM_BASE_URL = os.getenv("OSRM_BASE_URL", "http://localhost:5001").rstrip("/")
+OSRM_PROFILE = os.getenv("OSRM_PROFILE", "motorcycle")  # 'motorcycle' (local) hoặc 'driving' (server public)
 REQUEST_TIMEOUT = 30
 
 # --- Import các module tách biệt ------------------------------------------
