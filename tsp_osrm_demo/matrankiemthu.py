@@ -77,14 +77,14 @@ def run_benchmark(n_list: List[int] = [100, 500, 1000], max_time_min: float = 10
         print(f"N = {n:<8} | {'Tham lam (Greedy)':<24} | {visited_k:>3} / {n-1:<12} | {t_greedy_ms:>13.3f} ms | ✅ Hoàn thành")
 
         # 2. Đánh giá Backtracking
-        print(f"{'':<12} | {'Vét cạn (Backtracking)':<24} | {'—':<18} | {'—':>16} | ⚠️ Quá thời gian (>10s)")
+        print(f"{'':<12} | {'Vét cạn (Backtracking)':<24} | {'—':<18} | {'—':>16} | Quá thời gian (>10s)")
 
         # 3. Đánh giá Quy hoạch động DP
-        print(f"{'':<12} | {'Quy hoạch động (DP)':<24} | {'—':<18} | {'—':>16} | ⚠️ Lỗi bộ nhớ (RAM > 2^N)")
+        print(f"{'':<12} | {'Quy hoạch động (DP)':<24} | {'—':<18} | {'—':>16} | Lỗi bộ nhớ (RAM > 2^N)")
         print("-" * 86)
 
     print("=" * 86)
-    print("💡 Kết quả trên khớp 100% với Bảng 5.2 trong báo cáo và lý thuyết độ phức tạp!")
+  
 
 if __name__ == "__main__":
     run_benchmark()
