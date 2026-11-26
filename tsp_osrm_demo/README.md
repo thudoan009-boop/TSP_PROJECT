@@ -15,7 +15,7 @@ Hệ thống kết hợp dịch vụ định tuyến **OSRM Public API (nền Op
    - 4.2. Chạy ứng dụng Web trực quan (`app.py`)
    - 4.3. Chạy báo cáo dòng lệnh CLI (`main.py`)
    - 4.4. Cách sử dụng trên giao diện Web (`app.py`)
-   - 4.5. Kiểm thử ứng suất quy mô lớn với ma trận giả lập (`generate_synthetic_matrix.py`)
+   - 4.5. Kiểm thử ứng suất quy mô lớn với ma trận giả lập (`matrankiemthu.py`)
 5. [Nghiên cứu mở rộng & Hướng phát triển](#5-nghiên-cứu-mở-rộng--hướng-phát-triển)
 6. [Cấu trúc thư mục dự án](#6-cấu-trúc-thư-mục-dự-án)
 
@@ -72,15 +72,34 @@ Cả 3 thuật toán đều nhận cùng ma trận khoảng cách, ma trận th�
 
 Dự án chạy trực tiếp với Python thuần, **hoàn toàn không cần cài đặt Docker hay build bản đồ**.
 
-### 4.1. Cài đặt môi trường
-Mở Terminal / PowerShell tại thư mục dự án:
-```powershell
-# 1. Kích hoạt môi trường ảo (nếu có):
-.\.venv\Scripts\Activate.ps1
+### 4.1. Cài đặt môi trường cho thành viên mới (Khởi tạo từ đầu trên mọi IDE)
+Khi thành viên trong nhóm tải mã nguồn về máy hoặc mở trên IDE khác (VS Code, PyCharm, Cursor...), cần tạo môi trường ảo mới để cách ly thư viện và tránh xung đột hệ thống:
 
-# 2. Cài đặt các thư viện cần thiết:
+```powershell
+# Bước 1: Mở Terminal / PowerShell tại thư mục gốc của dự án
+
+# Bước 2: Tạo môi trường ảo Python mới (tên là .venv):
+python -m venv .venv
+
+# Bước 3: Kích hoạt môi trường ảo:
+# Trên Windows PowerShell:
+.\.venv\Scripts\Activate.ps1
+# (Hoặc trên Command Prompt - CMD: .\.venv\Scripts\activate.bat)
+# (Hoặc trên macOS / Linux: source .venv/bin/activate)
+
+# Bước 4: Cài đặt toàn bộ thư viện phụ thuộc:
 pip install -r tsp_osrm_demo/requirements.txt
 ```
+
+> 💡 **Mẹo xử lý lỗi thường gặp trên Windows PowerShell:**
+> * Nếu PowerShell báo lỗi chặn script (*`running scripts is disabled on this system`*), mở PowerShell gõ lệnh sau một lần:
+>   ```powershell
+>   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+>   ```
+> * **Cách chạy nhanh nhất không cần gõ lệnh kích hoạt:** Gọi thẳng Python của venv:
+>   ```powershell
+>   .\.venv\Scripts\python.exe -m streamlit run tsp_osrm_demo/app.py
+>   ```
 
 ---
 
@@ -130,11 +149,11 @@ Giao diện được thiết kế trực quan gồm 2 cột:
 
 ---
 
-### 4.5. Kiểm thử ứng suất quy mô lớn với ma trận giả lập (`generate_synthetic_matrix.py`)
+### 4.5. Kiểm thử ứng suất quy mô lớn với ma trận giả lập (`matrankiemthu.py`)
 Phục vụ việc tái lập và kiểm chứng thực nghiệm **Bảng 5.2 trong báo cáo đồ án** ở các quy mô cực lớn ($N = 100, 500, 1.000$ điểm):
 
 ```powershell
-python tsp_osrm_demo/generate_synthetic_matrix.py
+python tsp_osrm_demo/matrankiemthu.py
 ```
 - **Nguyên lý hoạt động:**
   1. Tự động sinh ngẫu nhiên $N$ tọa độ trong nội thành TP.HCM (Lat: $10.70 - 10.85$, Lon: $106.60 - 106.75$).
@@ -173,7 +192,7 @@ tsp_osrm_demo/
 │   ├── output.py                   # Tạo bản đồ Folium và xuất ma trận chi phí
 │   ├── places.csv                  # Dữ liệu danh sách địa điểm kiểm thử mặc định
 │   ├── coords_cache.json           # Bộ đệm lưu trữ tọa độ đã tra cứu
-│   ├── generate_synthetic_matrix.py # Sinh ma trận giả lập & kiểm thử ứng suất N = 100, 500, 1000
+│   ├── matrankiemthu.py            # Sinh ma trận giả lập & kiểm thử ứng suất N = 100, 500, 1000
 │   ├── requirements.txt            # Danh sách thư viện Python cần cài đặt
 │   └── output/                     # Thư mục chứa kết quả xuất ra (bản đồ, ma trận csv)
 │       └── route_map.html          # Bản đồ số tương tác Folium
